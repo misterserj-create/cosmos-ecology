@@ -33,7 +33,7 @@ export default async function Home() {
         <div style={{ maxWidth: 1200, margin: "0 auto" }}>
           <div className="section-label" style={{ marginBottom: 8 }}>Площадки</div>
           <div className="fade-line" style={{ marginBottom: 48 }} />
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 2 }}>
+          <div className="grid-venues" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 2 }}>
             {[
               { name: "Галерея «Печатники»", dates: "6 марта — 19 апреля", address: "Москва, ул. Гурьянова, 30" },
               { name: "Музей «Спутник»", dates: "15 марта — 15 июня", address: "Москва, Воробьёвы горы" },
@@ -50,7 +50,7 @@ export default async function Home() {
 
       {/* ── О ПРОЕКТЕ ── */}
       <section id="about" style={{ padding: "80px 24px" }}>
-        <div style={{ maxWidth: 1200, margin: "0 auto", display: "grid", gridTemplateColumns: "280px 1fr", gap: 80, alignItems: "start" }}>
+        <div className="grid-about" style={{ maxWidth: 1200, margin: "0 auto", display: "grid", gridTemplateColumns: "280px 1fr", gap: 80, alignItems: "start" }}>
           <div>
             <div className="section-label" style={{ marginBottom: 8 }}>О проекте</div>
             <div className="fade-line" />
@@ -77,7 +77,7 @@ export default async function Home() {
         <div style={{ maxWidth: 1200, margin: "0 auto" }}>
           <div className="section-label" style={{ marginBottom: 8 }}>Участники</div>
           <div className="fade-line" style={{ marginBottom: 48 }} />
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 1 }}>
+          <div className="grid-team" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 1 }}>
             {[
               { name: "Сергей Кожуховский", role: "Экохудожник, автор идеи", desc: "Финалист премии президентской платформы «Россия – страна возможностей». Трансформирует техногенные отходы в художественные образы." },
               { name: "Елизавета Козырь", role: "Художник-монументалист", desc: "Реставратор, участвовала в восстановлении святынь храма Воскресения Христова в Иерусалиме." },
@@ -101,7 +101,7 @@ export default async function Home() {
         <div style={{ maxWidth: 1200, margin: "0 auto" }}>
           <div className="section-label" style={{ marginBottom: 8 }}>Партнёры</div>
           <div className="fade-line" style={{ marginBottom: 48 }} />
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))", gap: 1 }}>
+          <div className="grid-partners" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))", gap: 1 }}>
             {[
               { name: "Принцип НОВО", desc: "Стратегический партнер и со-архитектор среды" },
               { name: "Platform.web-ar.studio", desc: "Технологический партнер, дополненная реальность" },
@@ -129,7 +129,7 @@ export default async function Home() {
           {events.length === 0 ? (
             <p style={{ color: "#444", fontSize: "0.9rem" }}>Мероприятия скоро появятся</p>
           ) : (
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(340px, 1fr))", gap: 2 }}>
+            <div className="grid-events" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(340px, 1fr))", gap: 2 }}>
               {events.map(ev => (
                 <div key={ev.id} style={{ background: "#0d0d0d", border: "1px solid #1a1a1a", overflow: "hidden" }}>
                   {ev.imageUrl && (
@@ -161,7 +161,7 @@ export default async function Home() {
 
       {/* ── ИСТОРИЯ ── */}
       <section id="history" style={{ padding: "80px 24px", borderTop: "1px solid #111" }}>
-        <div style={{ maxWidth: 1200, margin: "0 auto", display: "grid", gridTemplateColumns: "280px 1fr", gap: 80, alignItems: "start" }}>
+        <div className="grid-history-outer" style={{ maxWidth: 1200, margin: "0 auto", display: "grid", gridTemplateColumns: "280px 1fr", gap: 80, alignItems: "start" }}>
           <div>
             <div className="section-label" style={{ marginBottom: 8 }}>История проекта</div>
             <div className="fade-line" />
@@ -177,7 +177,7 @@ export default async function Home() {
               { year: "2023", text: "Ключевая выставка в Калуге, в ГМИК им. К.\u00a0Э.\u00a0Циолковского. В рамках «Экософии» экспозиция прошла в Архангельске, Тюмени, Санкт-Петербурге, Нижнем Новгороде, Екатеринбурге и Челябинске." },
               { year: "2026", text: "Трансформируя промышленную археологию в искусство будущего, проект продолжает масштабировать смыслы на стыке экологии и космонавтики." },
             ].map((item, i) => (
-              <div key={i} style={{ display: "grid", gridTemplateColumns: "72px 1fr", gap: 28, paddingBottom: 36, paddingTop: i === 0 ? 0 : 36, borderTop: i === 0 ? "none" : "1px solid #1a1a1a" }}>
+              <div key={i} className="grid-history-row" style={{ display: "grid", gridTemplateColumns: "72px 1fr", gap: 28, paddingBottom: 36, paddingTop: i === 0 ? 0 : 36, borderTop: i === 0 ? "none" : "1px solid #1a1a1a" }}>
                 <div style={{ fontFamily: "var(--font-playfair)", fontWeight: 700, fontSize: "1.3rem", color: "#c9a84c", paddingTop: 2 }}>{item.year}</div>
                 <div style={{ fontSize: "1rem", color: "#999", lineHeight: 1.8 }}>{item.text}</div>
               </div>
@@ -191,7 +191,7 @@ export default async function Home() {
         <div style={{ maxWidth: 1200, margin: "0 auto" }}>
           <div className="section-label" style={{ marginBottom: 8 }}>Благодарности</div>
           <div className="fade-line" style={{ marginBottom: 48 }} />
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))", gap: 1 }}>
+          <div className="grid-thanks" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))", gap: 1 }}>
             {[
               { name: "Павел Мусс", title: "Генеральный директор «Принцип НОВО»", text: "За многолетнюю стратегическую поддержку проектов арт-группы «Осознанность» и личное участие в развитии нашей экосистемы." },
               { name: "Ксения Макарчук", title: "Президент Арт-клуба «Сколково»", text: "За всестороннюю помощь, мощный информационный ресурс и участие в проектах арт-группы «Осознанность»." },
@@ -218,46 +218,6 @@ export default async function Home() {
         </div>
       </footer>
 
-      <style>{`
-        @media (max-width: 768px) {
-          /* Hero */
-          section[style*="padding: 120px 24px"] { padding: 100px 20px 60px !important; }
-
-          /* Все секции — меньше отступы */
-          section { padding: 56px 20px !important; }
-
-          /* Грид 2 колонки → 1 */
-          div[style*="grid-template-columns: 1fr 1fr"] { grid-template-columns: 1fr !important; }
-
-          /* О проекте и История (280px + 1fr) → 1 колонка */
-          div[style*="grid-template-columns: 280px"] { grid-template-columns: 1fr !important; gap: 28px !important; }
-
-          /* Команда и партнёры — 1 колонка на узких */
-          div[style*="minmax(280px"] { grid-template-columns: 1fr !important; }
-          div[style*="minmax(240px"] { grid-template-columns: 1fr 1fr !important; }
-          div[style*="minmax(320px"] { grid-template-columns: 1fr !important; }
-          div[style*="minmax(340px"] { grid-template-columns: 1fr !important; }
-
-          /* Площадки — паддинг меньше */
-          div[style*="padding: 48px 40px"] { padding: 32px 24px !important; }
-
-          /* Команда карточки */
-          div[style*="padding: 32px 28px"] { padding: 24px 20px !important; }
-
-          /* История — убрать колонку года, сделать строкой */
-          div[style*="grid-template-columns: 72px"] { grid-template-columns: 56px 1fr !important; gap: 16px !important; }
-
-          /* Footer */
-          footer > div { flex-direction: column !important; align-items: flex-start !important; gap: 8px !important; }
-
-          /* Навигация */
-          nav > div { padding: 0 16px !important; }
-        }
-
-        @media (max-width: 480px) {
-          div[style*="minmax(240px"] { grid-template-columns: 1fr !important; }
-        }
-      `}</style>
     </>
   )
 }

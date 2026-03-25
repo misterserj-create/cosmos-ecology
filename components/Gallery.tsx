@@ -2,7 +2,7 @@
 import { useState } from "react"
 import type { Artwork } from "@/lib/airtable"
 
-const AUTHORS = ["Все", "Сергей Кожуховский", "Татьяна Кокорева"]
+const AUTHORS = ["Все", "Сергей Кожуховский", "Елизавета Козырь", "Татьяна Кокорева"]
 
 export default function Gallery({ artworks }: { artworks: Artwork[] }) {
   const [filter, setFilter] = useState("Все")
@@ -60,7 +60,7 @@ export default function Gallery({ artworks }: { artworks: Artwork[] }) {
       {/* Lightbox */}
       {selected && (
         <div onClick={() => setSelected(null)} style={{ position: "fixed", inset: 0, zIndex: 200, background: "rgba(0,0,0,0.92)", display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
-          <div onClick={e => e.stopPropagation()} style={{ maxWidth: 900, width: "100%", background: "#0d0d0d", display: "grid", gridTemplateColumns: "1fr 1fr", maxHeight: "90vh", overflow: "auto" }}>
+          <div onClick={e => e.stopPropagation()} className="lightbox-inner" style={{ maxWidth: 900, width: "100%", background: "#0d0d0d", display: "grid", gridTemplateColumns: "1fr 1fr", maxHeight: "90vh", overflow: "auto" }}>
             <div style={{ background: "#111" }}>
               {selected.imageUrl && <img src={selected.imageUrl} alt={selected.title} style={{ width: "100%", height: "100%", objectFit: "contain", display: "block" }} />}
             </div>

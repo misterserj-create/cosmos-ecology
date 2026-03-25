@@ -37,3 +37,59 @@ body {
   to   { opacity: 1; transform: translateY(0); }
 }
 .fade-up { animation: fadeUp 0.7s ease forwards; }
+
+/* ── Мобильная адаптация ── */
+@media (max-width: 768px) {
+  section { padding-left: 16px !important; padding-right: 16px !important; }
+
+  .grid-venues {
+    grid-template-columns: 1fr !important;
+  }
+
+  .grid-about {
+    grid-template-columns: 1fr !important;
+    gap: 24px !important;
+  }
+
+  .grid-team {
+    grid-template-columns: 1fr !important;
+  }
+
+  .grid-partners {
+    grid-template-columns: 1fr 1fr !important;
+  }
+
+  .grid-events {
+    grid-template-columns: 1fr !important;
+  }
+
+  .grid-history-outer {
+    grid-template-columns: 1fr !important;
+    gap: 24px !important;
+  }
+
+  .grid-history-row {
+    grid-template-columns: 52px 1fr !important;
+    gap: 12px !important;
+  }
+
+  .grid-thanks {
+    grid-template-columns: 1fr !important;
+  }
+
+  .lightbox-inner {
+    grid-template-columns: 1fr !important;
+  }
+
+  footer > div {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 8px !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .grid-partners {
+    grid-template-columns: 1fr !important;
+  }
+}
