@@ -11,18 +11,18 @@ export default async function Home() {
       <Nav />
 
       {/* ── HERO ── */}
-      <section style={{ minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "80px 24px 60px", textAlign: "center", position: "relative" }}>
+      <section style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "120px 24px 80px", textAlign: "center", position: "relative" }}>
         <div style={{ position: "absolute", inset: 0, background: "radial-gradient(ellipse at center, #1a1200 0%, #080808 70%)", zIndex: 0 }} />
         <div style={{ position: "relative", zIndex: 1, maxWidth: 800 }}>
-          <div className="section-label" style={{ marginBottom: 24, fontSize: "0.8rem" }}>Выставочный проект · 2026</div>
-          <h1 style={{ fontFamily: "var(--font-playfair)", fontWeight: 700, fontSize: "clamp(2.5rem, 8vw, 5.5rem)", lineHeight: 1.05, letterSpacing: "0.03em", textTransform: "uppercase", marginBottom: 24 }}>
+          <div className="section-label" style={{ marginBottom: 24, fontSize: "0.9rem" }}>Выставочный проект · 2026</div>
+          <h1 style={{ fontFamily: "var(--font-playfair)", fontWeight: 700, fontSize: "clamp(3rem, 10vw, 6rem)", lineHeight: 1.05, letterSpacing: "0.03em", textTransform: "uppercase", marginBottom: 28 }}>
             Экология<br />Космоса
           </h1>
-          <div className="fade-line" style={{ maxWidth: 400, margin: "0 auto 24px" }} />
-          <p style={{ color: "#aaa", fontSize: "1rem", letterSpacing: "0.05em", marginBottom: 48 }}>
+          <div className="fade-line" style={{ maxWidth: 400, margin: "0 auto 28px" }} />
+          <p style={{ color: "#aaa", fontSize: "1.1rem", letterSpacing: "0.05em", marginBottom: 48 }}>
             К 65-летию полёта Юрия Гагарина
           </p>
-          <a href="#gallery" style={{ display: "inline-block", padding: "14px 40px", border: "1px solid #c9a84c", color: "#c9a84c", textDecoration: "none", fontSize: "0.8rem", letterSpacing: "0.3em", textTransform: "uppercase" }}>
+          <a href="#gallery" style={{ display: "inline-block", padding: "16px 48px", border: "1px solid #c9a84c", color: "#c9a84c", textDecoration: "none", fontSize: "0.85rem", letterSpacing: "0.3em", textTransform: "uppercase" }}>
             Смотреть галерею
           </a>
         </div>
@@ -39,9 +39,9 @@ export default async function Home() {
               { name: "Музей «Спутник»", dates: "15 марта — 15 июня", address: "Москва, Воробьёвы горы" },
             ].map(v => (
               <div key={v.name} style={{ background: "#0d0d0d", border: "1px solid #1a1a1a", padding: "48px 40px" }}>
-                <div style={{ fontFamily: "var(--font-playfair)", fontWeight: 700, fontSize: "1.6rem", marginBottom: 16 }}>{v.name}</div>
-                <div style={{ color: "#c9a84c", fontSize: "1.05rem", marginBottom: 8 }}>{v.dates}</div>
-                <div style={{ color: "#777", fontSize: "0.95rem" }}>{v.address}</div>
+                <div style={{ fontFamily: "var(--font-playfair)", fontWeight: 700, fontSize: "1.75rem", marginBottom: 16 }}>{v.name}</div>
+                <div style={{ color: "#c9a84c", fontSize: "1.15rem", marginBottom: 8 }}>{v.dates}</div>
+                <div style={{ color: "#777", fontSize: "1.05rem" }}>{v.address}</div>
               </div>
             ))}
           </div>
@@ -56,13 +56,13 @@ export default async function Home() {
             <div className="fade-line" />
           </div>
           <div>
-            <p style={{ fontFamily: "var(--font-playfair)", fontSize: "1.25rem", lineHeight: 1.7, color: "#ddd", marginBottom: 24 }}>
+            <p style={{ fontFamily: "var(--font-playfair)", fontSize: "1.4rem", lineHeight: 1.7, color: "#ddd", marginBottom: 24 }}>
               Выставка посвящена актуальным вопросам техногенного воздействия на околоземную орбиту и проблеме космического мусора.
             </p>
-            <p style={{ fontSize: "1rem", lineHeight: 1.8, color: "#999", marginBottom: 16 }}>
+            <p style={{ fontSize: "1.1rem", lineHeight: 1.8, color: "#999", marginBottom: 16 }}>
               В экспозиции представлены работы художников Сергея Кожуховского, Татьяны Кокоревой и Елизаветы Козырь. Авторы исследуют взаимодействие человека с внеземным пространством через призму экологической ответственности и устойчивого развития.
             </p>
-            <p style={{ fontSize: "0.95rem", lineHeight: 1.8, color: "#666" }}>
+            <p style={{ fontSize: "1.05rem", lineHeight: 1.8, color: "#666" }}>
               Проект, чьи работы уже пополнили Музейный фонд РФ после экспонирования в Государственном музее истории космонавтики имени К.&nbsp;Э.&nbsp;Циолковского, объединяет науку и искусство.
             </p>
           </div>
@@ -87,9 +87,9 @@ export default async function Home() {
               { name: "Элина Папас", role: "Исполнительный продюсер", desc: "Куратор Арт-клуба Сколково, выпускница бизнес-школы Сколково и Лондонской школы бизнеса. Магистр РАНХиГС, программа «Управление в арт-бизнесе»." },
             ].map(p => (
               <div key={p.name} style={{ background: "#0d0d0d", padding: "32px 28px", borderTop: "2px solid #1a1a1a" }}>
-                <div style={{ fontFamily: "var(--font-playfair)", fontStyle: "italic", color: "#c9a84c", fontSize: "1.2rem", marginBottom: 6 }}>{p.name}</div>
-                <div style={{ fontSize: "0.8rem", color: "#555", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 12 }}>{p.role}</div>
-                <div style={{ fontSize: "0.95rem", color: "#888", lineHeight: 1.75 }}>{p.desc}</div>
+                <div style={{ fontFamily: "var(--font-playfair)", fontStyle: "italic", color: "#c9a84c", fontSize: "1.3rem", marginBottom: 6 }}>{p.name}</div>
+                <div style={{ fontSize: "0.85rem", color: "#555", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 12 }}>{p.role}</div>
+                <div style={{ fontSize: "1.05rem", color: "#888", lineHeight: 1.75 }}>{p.desc}</div>
               </div>
             ))}
           </div>
@@ -113,8 +113,8 @@ export default async function Home() {
               { name: "Департамент культуры Москвы", desc: "" },
             ].map(p => (
               <div key={p.name} style={{ padding: "28px 0", borderTop: "1px solid #1a1a1a" }}>
-                <div style={{ fontSize: "1rem", color: "#c9a84c", marginBottom: 8 }}>{p.name}</div>
-                {p.desc && <div style={{ fontSize: "0.9rem", color: "#666", lineHeight: 1.6 }}>{p.desc}</div>}
+                <div style={{ fontSize: "1.1rem", color: "#c9a84c", marginBottom: 8 }}>{p.name}</div>
+                {p.desc && <div style={{ fontSize: "1rem", color: "#666", lineHeight: 1.6 }}>{p.desc}</div>}
               </div>
             ))}
           </div>
@@ -139,13 +139,13 @@ export default async function Home() {
                   )}
                   <div style={{ padding: "28px 28px 32px" }}>
                     {ev.type && <div className="section-label" style={{ marginBottom: 12 }}>{ev.type}</div>}
-                    <div style={{ fontFamily: "var(--font-playfair)", fontWeight: 700, fontSize: "1.2rem", lineHeight: 1.3, marginBottom: 12 }}>{ev.title}</div>
+                    <div style={{ fontFamily: "var(--font-playfair)", fontWeight: 700, fontSize: "1.35rem", lineHeight: 1.3, marginBottom: 12 }}>{ev.title}</div>
                     {(ev.date || ev.place) && (
-                      <div style={{ color: "#c9a84c", fontSize: "0.9rem", marginBottom: 12 }}>
+                      <div style={{ color: "#c9a84c", fontSize: "1rem", marginBottom: 12 }}>
                         {ev.date}{ev.date && ev.place ? " · " : ""}{ev.place}
                       </div>
                     )}
-                    {ev.description && <div style={{ fontSize: "0.95rem", color: "#888", lineHeight: 1.7 }}>{ev.description}</div>}
+                    {ev.description && <div style={{ fontSize: "1.05rem", color: "#888", lineHeight: 1.7 }}>{ev.description}</div>}
                     {ev.link && (
                       <a href={ev.link} target="_blank" rel="noopener noreferrer" style={{ display: "inline-block", marginTop: 16, fontSize: "0.75rem", letterSpacing: "0.2em", textTransform: "uppercase", color: "#c9a84c", textDecoration: "none", borderBottom: "1px solid #c9a84c44" }}>
                         Подробнее →
@@ -201,9 +201,9 @@ export default async function Home() {
               { name: "Андрей Беляев", title: "Генеральный директор «Айфлекс»", text: "За надёжное партнёрство, проверенное годами, и неизменную поддержку наших инициатив." },
             ].map(p => (
               <div key={p.name} style={{ padding: "32px 0", borderTop: "1px solid #1a1a1a" }}>
-                <div style={{ fontFamily: "var(--font-playfair)", fontStyle: "italic", color: "#c9a84c", fontSize: "1.1rem", marginBottom: 6 }}>{p.name}</div>
-                <div style={{ fontSize: "0.8rem", color: "#444", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 12 }}>{p.title}</div>
-                <div style={{ fontSize: "0.95rem", color: "#777", lineHeight: 1.75 }}>{p.text}</div>
+                <div style={{ fontFamily: "var(--font-playfair)", fontStyle: "italic", color: "#c9a84c", fontSize: "1.2rem", marginBottom: 6 }}>{p.name}</div>
+                <div style={{ fontSize: "0.85rem", color: "#444", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 12 }}>{p.title}</div>
+                <div style={{ fontSize: "1.05rem", color: "#777", lineHeight: 1.75 }}>{p.text}</div>
               </div>
             ))}
           </div>
@@ -220,8 +220,42 @@ export default async function Home() {
 
       <style>{`
         @media (max-width: 768px) {
-          section > div[style*="grid-template-columns: 1fr 1fr"] { grid-template-columns: 1fr !important; }
-          section > div[style*="grid-template-columns: 280px"] { grid-template-columns: 1fr !important; gap: 32px !important; }
+          /* Hero */
+          section[style*="padding: 120px 24px"] { padding: 100px 20px 60px !important; }
+
+          /* Все секции — меньше отступы */
+          section { padding: 56px 20px !important; }
+
+          /* Грид 2 колонки → 1 */
+          div[style*="grid-template-columns: 1fr 1fr"] { grid-template-columns: 1fr !important; }
+
+          /* О проекте и История (280px + 1fr) → 1 колонка */
+          div[style*="grid-template-columns: 280px"] { grid-template-columns: 1fr !important; gap: 28px !important; }
+
+          /* Команда и партнёры — 1 колонка на узких */
+          div[style*="minmax(280px"] { grid-template-columns: 1fr !important; }
+          div[style*="minmax(240px"] { grid-template-columns: 1fr 1fr !important; }
+          div[style*="minmax(320px"] { grid-template-columns: 1fr !important; }
+          div[style*="minmax(340px"] { grid-template-columns: 1fr !important; }
+
+          /* Площадки — паддинг меньше */
+          div[style*="padding: 48px 40px"] { padding: 32px 24px !important; }
+
+          /* Команда карточки */
+          div[style*="padding: 32px 28px"] { padding: 24px 20px !important; }
+
+          /* История — убрать колонку года, сделать строкой */
+          div[style*="grid-template-columns: 72px"] { grid-template-columns: 56px 1fr !important; gap: 16px !important; }
+
+          /* Footer */
+          footer > div { flex-direction: column !important; align-items: flex-start !important; gap: 8px !important; }
+
+          /* Навигация */
+          nav > div { padding: 0 16px !important; }
+        }
+
+        @media (max-width: 480px) {
+          div[style*="minmax(240px"] { grid-template-columns: 1fr !important; }
         }
       `}</style>
     </>
