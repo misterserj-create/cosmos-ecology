@@ -80,7 +80,8 @@ export async function fetchEvents(): Promise<Event[]> {
   const params = new URLSearchParams({
     pageSize: '100',
     filterByFormula: '{Опубликовать}=1',
-    sort: JSON.stringify([{ field: 'Дата', direction: 'asc' }]),
+    'sort[0][field]': 'Дата',
+    'sort[0][direction]': 'asc',
   })
 
   const res = await fetch(
@@ -90,6 +91,11 @@ export async function fetchEvents(): Promise<Event[]> {
       cache: 'no-store',
     }
   )
+
+  if (!res.ok) {
+    console.error('Airtable events error:', res.status, await res.text())
+    return []
+  }
 
   const data = await res.json()
   return (data.records || []).map((rec: any) => {
