@@ -7,6 +7,7 @@ const links = [
   { href: "#gallery", label: "Галерея" },
   { href: "#team", label: "Команда" },
   { href: "#partners", label: "Партнёры" },
+  { href: "#events", label: "События" },
   { href: "#history", label: "История" },
 ]
 

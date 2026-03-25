@@ -1,9 +1,9 @@
-import { fetchArtworks } from "@/lib/airtable"
+import { fetchArtworks, fetchEvents } from "@/lib/airtable"
 import Nav from "@/components/Nav"
 import Gallery from "@/components/Gallery"
 
 export default async function Home() {
-  const artworks = await fetchArtworks()
+  const [artworks, events] = await Promise.all([fetchArtworks(), fetchEvents()])
   const catalog = artworks.filter(a => a.inCatalog && a.imageUrl)
 
   return (
@@ -118,6 +118,44 @@ export default async function Home() {
               </div>
             ))}
           </div>
+        </div>
+      </section>
+
+      {/* ── СОБЫТИЯ ── */}
+      <section id="events" style={{ padding: "80px 24px", borderTop: "1px solid #111" }}>
+        <div style={{ maxWidth: 1200, margin: "0 auto" }}>
+          <div className="section-label" style={{ marginBottom: 8 }}>Мероприятия и новости</div>
+          <div className="fade-line" style={{ marginBottom: 48 }} />
+          {events.length === 0 ? (
+            <p style={{ color: "#444", fontSize: "0.9rem" }}>Мероприятия скоро появятся</p>
+          ) : (
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(340px, 1fr))", gap: 2 }}>
+              {events.map(ev => (
+                <div key={ev.id} style={{ background: "#0d0d0d", border: "1px solid #1a1a1a", overflow: "hidden" }}>
+                  {ev.imageUrl && (
+                    <div style={{ height: 200, overflow: "hidden" }}>
+                      <img src={ev.imageUrl} alt={ev.title} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                    </div>
+                  )}
+                  <div style={{ padding: "28px 28px 32px" }}>
+                    {ev.type && <div className="section-label" style={{ marginBottom: 12 }}>{ev.type}</div>}
+                    <div style={{ fontFamily: "var(--font-playfair)", fontWeight: 700, fontSize: "1.2rem", lineHeight: 1.3, marginBottom: 12 }}>{ev.title}</div>
+                    {(ev.date || ev.place) && (
+                      <div style={{ color: "#c9a84c", fontSize: "0.9rem", marginBottom: 12 }}>
+                        {ev.date}{ev.date && ev.place ? " · " : ""}{ev.place}
+                      </div>
+                    )}
+                    {ev.description && <div style={{ fontSize: "0.95rem", color: "#888", lineHeight: 1.7 }}>{ev.description}</div>}
+                    {ev.link && (
+                      <a href={ev.link} target="_blank" rel="noopener noreferrer" style={{ display: "inline-block", marginTop: 16, fontSize: "0.75rem", letterSpacing: "0.2em", textTransform: "uppercase", color: "#c9a84c", textDecoration: "none", borderBottom: "1px solid #c9a84c44" }}>
+                        Подробнее →
+                      </a>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </section>
 

@@ -1,6 +1,7 @@
 const TOKEN = process.env.AIRTABLE_TOKEN!
 const APP_ID = process.env.AIRTABLE_APP_ID!
 const TABLE_ID = process.env.AIRTABLE_TABLE_ID!
+const EVENTS_TABLE_ID = 'tbl6JeW1z4f8XAyaz'
 
 export interface Artwork {
   id: string
@@ -62,4 +63,47 @@ export async function fetchArtworks(): Promise<Artwork[]> {
   } while (offset)
 
   return records.sort((a, b) => a.artId.localeCompare(b.artId))
+}
+
+export interface Event {
+  id: string
+  title: string
+  type: string
+  date: string
+  place: string
+  description: string
+  link: string
+  imageUrl: string
+}
+
+export async function fetchEvents(): Promise<Event[]> {
+  const params = new URLSearchParams({
+    pageSize: '100',
+    filterByFormula: '{Опубликовать}=1',
+    sort: JSON.stringify([{ field: 'Дата', direction: 'asc' }]),
+  })
+
+  const res = await fetch(
+    `https://api.airtable.com/v0/${APP_ID}/${EVENTS_TABLE_ID}?${params}`,
+    {
+      headers: { Authorization: `Bearer ${TOKEN}` },
+      next: { revalidate: 300 },
+    }
+  )
+
+  const data = await res.json()
+  return (data.records || []).map((rec: any) => {
+    const f = rec.fields
+    const imgs = f['Фото'] || []
+    return {
+      id: rec.id,
+      title: f['Название'] || '',
+      type: f['Тип'] || '',
+      date: f['Дата'] || '',
+      place: f['Место'] || '',
+      description: f['Описание'] || '',
+      link: f['Ссылка'] || '',
+      imageUrl: imgs[0]?.url || '',
+    }
+  })
 }
