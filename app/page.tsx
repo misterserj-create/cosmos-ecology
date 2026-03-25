@@ -121,6 +121,59 @@ export default async function Home() {
         </div>
       </section>
 
+      {/* ── ИСТОРИЯ ── */}
+      <section id="history" style={{ padding: "80px 24px", borderTop: "1px solid #111" }}>
+        <div style={{ maxWidth: 1200, margin: "0 auto", display: "grid", gridTemplateColumns: "280px 1fr", gap: 80, alignItems: "start" }}>
+          <div>
+            <div className="section-label" style={{ marginBottom: 8 }}>История проекта</div>
+            <div className="fade-line" />
+            <p style={{ marginTop: 24, fontSize: "0.82rem", color: "#555", lineHeight: 1.7 }}>
+              «Экология космоса» выросла из слияния двух авторских взглядов на технологический след человечества.
+            </p>
+          </div>
+          <div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
+              {[
+                { year: "2018", text: "Монументальный художник Елизавета Козырь создала концептуальную серию работ, заложив визуальный фундамент темы." },
+                { year: "2021", text: "Сергей Кожуховский, работая в ППК РЭО, создал первые объекты из электронных компонентов и дал проекту официальное название." },
+                { year: "2022", text: "«Экология космоса» вышла в публичное пространство. Осенью проект представлен в инновационном центре «Ренова Лаб»." },
+                { year: "2023", text: "Ключевая выставка в Калуге, в ГМИК им. К.\u00a0Э.\u00a0Циолковского. В рамках «Экософии» экспозиция прошла в Архангельске, Тюмени, Санкт-Петербурге, Нижнем Новгороде, Екатеринбурге и Челябинске." },
+                { year: "2026", text: "Трансформируя промышленную археологию в искусство будущего, проект продолжает масштабировать смыслы на стыке экологии и космонавтики." },
+              ].map((item, i) => (
+                <div key={i} style={{ display: "grid", gridTemplateColumns: "64px 1fr", gap: 24, paddingBottom: 32, paddingTop: i === 0 ? 0 : 32, borderTop: i === 0 ? "none" : "1px solid #1a1a1a" }}>
+                  <div style={{ fontFamily: "var(--font-playfair)", fontWeight: 700, fontSize: "1.1rem", color: "#c9a84c", paddingTop: 2 }}>{item.year}</div>
+                  <div style={{ fontSize: "0.88rem", color: "#999", lineHeight: 1.75 }}>{item.text}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── БЛАГОДАРНОСТИ ── */}
+      <section style={{ padding: "80px 24px", borderTop: "1px solid #111" }}>
+        <div style={{ maxWidth: 1200, margin: "0 auto" }}>
+          <div className="section-label" style={{ marginBottom: 8 }}>Благодарности</div>
+          <div className="fade-line" style={{ marginBottom: 48 }} />
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))", gap: 1 }}>
+            {[
+              { name: "Павел Мусс", title: "Генеральный директор «Принцип НОВО»", text: "За многолетнюю стратегическую поддержку проектов арт-группы «Осознанность» и личное участие в развитии нашей экосистемы." },
+              { name: "Ксения Макарчук", title: "Президент Арт-клуба «Сколково»", text: "За всестороннюю помощь, мощный информационный ресурс и участие в проектах арт-группы «Осознанность»." },
+              { name: "Елена Волкова", title: "Руководитель издательства «Русский мир медиа»", text: "За безупречную организацию выставочных циклов в «Ренова Лаб» и ГМИК им. К.\u00a0Э.\u00a0Циолковского." },
+              { name: "Наталья Абакумова", title: "Директор ГМИК им. К.\u00a0Э.\u00a0Циолковского", text: "За проведение выставки и высокую экспертную оценку, результатом которой стала передача части работ в фонды музея и Государственный каталог РФ." },
+              { name: "Денис Щербаков", title: "Основатель «Фестиваль-Строй»", text: "За профессиональную застройку экспозиций, предоставление выставочной инфраструктуры и активное партнёрство с 2022 года." },
+              { name: "Андрей Беляев", title: "Генеральный директор «Айфлекс»", text: "За надёжное партнёрство, проверенное годами, и неизменную поддержку наших инициатив." },
+            ].map(p => (
+              <div key={p.name} style={{ padding: "28px 0 28px 0", borderTop: "1px solid #1a1a1a" }}>
+                <div style={{ fontFamily: "var(--font-playfair)", fontStyle: "italic", color: "#c9a84c", fontSize: "0.95rem", marginBottom: 4 }}>{p.name}</div>
+                <div style={{ fontSize: "0.68rem", color: "#444", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 10 }}>{p.title}</div>
+                <div style={{ fontSize: "0.82rem", color: "#666", lineHeight: 1.7 }}>{p.text}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* ── FOOTER ── */}
       <footer style={{ borderTop: "1px solid #1a1a1a", padding: "32px 24px" }}>
         <div style={{ maxWidth: 1200, margin: "0 auto", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 16 }}>
