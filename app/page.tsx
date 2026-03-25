@@ -14,15 +14,15 @@ export default async function Home() {
       <section style={{ minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "80px 24px 60px", textAlign: "center", position: "relative" }}>
         <div style={{ position: "absolute", inset: 0, background: "radial-gradient(ellipse at center, #1a1200 0%, #080808 70%)", zIndex: 0 }} />
         <div style={{ position: "relative", zIndex: 1, maxWidth: 800 }}>
-          <div className="section-label" style={{ marginBottom: 24 }}>Выставочный проект · 2026</div>
+          <div className="section-label" style={{ marginBottom: 24, fontSize: "0.8rem" }}>Выставочный проект · 2026</div>
           <h1 style={{ fontFamily: "var(--font-playfair)", fontWeight: 700, fontSize: "clamp(2.5rem, 8vw, 5.5rem)", lineHeight: 1.05, letterSpacing: "0.03em", textTransform: "uppercase", marginBottom: 24 }}>
             Экология<br />Космоса
           </h1>
           <div className="fade-line" style={{ maxWidth: 400, margin: "0 auto 24px" }} />
-          <p style={{ color: "#888", fontSize: "0.9rem", letterSpacing: "0.05em", marginBottom: 48 }}>
+          <p style={{ color: "#aaa", fontSize: "1rem", letterSpacing: "0.05em", marginBottom: 48 }}>
             К 65-летию полёта Юрия Гагарина
           </p>
-          <a href="#gallery" style={{ display: "inline-block", padding: "14px 40px", border: "1px solid #c9a84c", color: "#c9a84c", textDecoration: "none", fontSize: "0.7rem", letterSpacing: "0.3em", textTransform: "uppercase" }}>
+          <a href="#gallery" style={{ display: "inline-block", padding: "14px 40px", border: "1px solid #c9a84c", color: "#c9a84c", textDecoration: "none", fontSize: "0.8rem", letterSpacing: "0.3em", textTransform: "uppercase" }}>
             Смотреть галерею
           </a>
         </div>
@@ -39,9 +39,9 @@ export default async function Home() {
               { name: "Музей «Спутник»", dates: "15 марта — 15 июня", address: "Москва, Воробьёвы горы" },
             ].map(v => (
               <div key={v.name} style={{ background: "#0d0d0d", border: "1px solid #1a1a1a", padding: "48px 40px" }}>
-                <div style={{ fontFamily: "var(--font-playfair)", fontWeight: 700, fontSize: "1.5rem", marginBottom: 16 }}>{v.name}</div>
-                <div style={{ color: "#c9a84c", fontSize: "0.9rem", marginBottom: 8 }}>{v.dates}</div>
-                <div style={{ color: "#555", fontSize: "0.8rem" }}>{v.address}</div>
+                <div style={{ fontFamily: "var(--font-playfair)", fontWeight: 700, fontSize: "1.6rem", marginBottom: 16 }}>{v.name}</div>
+                <div style={{ color: "#c9a84c", fontSize: "1.05rem", marginBottom: 8 }}>{v.dates}</div>
+                <div style={{ color: "#777", fontSize: "0.95rem" }}>{v.address}</div>
               </div>
             ))}
           </div>
@@ -56,13 +56,13 @@ export default async function Home() {
             <div className="fade-line" />
           </div>
           <div>
-            <p style={{ fontFamily: "var(--font-playfair)", fontSize: "1.15rem", lineHeight: 1.7, color: "#ddd", marginBottom: 24 }}>
+            <p style={{ fontFamily: "var(--font-playfair)", fontSize: "1.25rem", lineHeight: 1.7, color: "#ddd", marginBottom: 24 }}>
               Выставка посвящена актуальным вопросам техногенного воздействия на околоземную орбиту и проблеме космического мусора.
             </p>
-            <p style={{ fontSize: "0.9rem", lineHeight: 1.8, color: "#888", marginBottom: 16 }}>
+            <p style={{ fontSize: "1rem", lineHeight: 1.8, color: "#999", marginBottom: 16 }}>
               В экспозиции представлены работы художников Сергея Кожуховского, Татьяны Кокоревой и Елизаветы Козырь. Авторы исследуют взаимодействие человека с внеземным пространством через призму экологической ответственности и устойчивого развития.
             </p>
-            <p style={{ fontSize: "0.82rem", lineHeight: 1.8, color: "#555" }}>
+            <p style={{ fontSize: "0.95rem", lineHeight: 1.8, color: "#666" }}>
               Проект, чьи работы уже пополнили Музейный фонд РФ после экспонирования в Государственном музее истории космонавтики имени К.&nbsp;Э.&nbsp;Циолковского, объединяет науку и искусство.
             </p>
           </div>
@@ -87,9 +87,9 @@ export default async function Home() {
               { name: "Элина Папас", role: "Исполнительный продюсер", desc: "Куратор Арт-клуба Сколково, выпускница бизнес-школы Сколково и Лондонской школы бизнеса. Магистр РАНХиГС, программа «Управление в арт-бизнесе»." },
             ].map(p => (
               <div key={p.name} style={{ background: "#0d0d0d", padding: "32px 28px", borderTop: "2px solid #1a1a1a" }}>
-                <div style={{ fontFamily: "var(--font-playfair)", fontStyle: "italic", color: "#c9a84c", fontSize: "1.05rem", marginBottom: 6 }}>{p.name}</div>
-                <div style={{ fontSize: "0.68rem", color: "#555", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 12 }}>{p.role}</div>
-                <div style={{ fontSize: "0.82rem", color: "#777", lineHeight: 1.7 }}>{p.desc}</div>
+                <div style={{ fontFamily: "var(--font-playfair)", fontStyle: "italic", color: "#c9a84c", fontSize: "1.2rem", marginBottom: 6 }}>{p.name}</div>
+                <div style={{ fontSize: "0.8rem", color: "#555", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 12 }}>{p.role}</div>
+                <div style={{ fontSize: "0.95rem", color: "#888", lineHeight: 1.75 }}>{p.desc}</div>
               </div>
             ))}
           </div>
@@ -112,9 +112,9 @@ export default async function Home() {
               { name: "«айФлекс»", desc: "Российский разработчик, 20 лет на рынке" },
               { name: "Департамент культуры Москвы", desc: "" },
             ].map(p => (
-              <div key={p.name} style={{ padding: "24px 0", borderTop: "1px solid #1a1a1a" }}>
-                <div style={{ fontSize: "0.82rem", color: "#c9a84c", marginBottom: 6 }}>{p.name}</div>
-                {p.desc && <div style={{ fontSize: "0.75rem", color: "#555", lineHeight: 1.6 }}>{p.desc}</div>}
+              <div key={p.name} style={{ padding: "28px 0", borderTop: "1px solid #1a1a1a" }}>
+                <div style={{ fontSize: "1rem", color: "#c9a84c", marginBottom: 8 }}>{p.name}</div>
+                {p.desc && <div style={{ fontSize: "0.9rem", color: "#666", lineHeight: 1.6 }}>{p.desc}</div>}
               </div>
             ))}
           </div>
@@ -127,25 +127,23 @@ export default async function Home() {
           <div>
             <div className="section-label" style={{ marginBottom: 8 }}>История проекта</div>
             <div className="fade-line" />
-            <p style={{ marginTop: 24, fontSize: "0.82rem", color: "#555", lineHeight: 1.7 }}>
+            <p style={{ marginTop: 24, fontSize: "0.95rem", color: "#555", lineHeight: 1.7 }}>
               «Экология космоса» выросла из слияния двух авторских взглядов на технологический след человечества.
             </p>
           </div>
           <div>
-            <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
-              {[
-                { year: "2018", text: "Монументальный художник Елизавета Козырь создала концептуальную серию работ, заложив визуальный фундамент темы." },
-                { year: "2021", text: "Сергей Кожуховский, работая в ППК РЭО, создал первые объекты из электронных компонентов и дал проекту официальное название." },
-                { year: "2022", text: "«Экология космоса» вышла в публичное пространство. Осенью проект представлен в инновационном центре «Ренова Лаб»." },
-                { year: "2023", text: "Ключевая выставка в Калуге, в ГМИК им. К.\u00a0Э.\u00a0Циолковского. В рамках «Экософии» экспозиция прошла в Архангельске, Тюмени, Санкт-Петербурге, Нижнем Новгороде, Екатеринбурге и Челябинске." },
-                { year: "2026", text: "Трансформируя промышленную археологию в искусство будущего, проект продолжает масштабировать смыслы на стыке экологии и космонавтики." },
-              ].map((item, i) => (
-                <div key={i} style={{ display: "grid", gridTemplateColumns: "64px 1fr", gap: 24, paddingBottom: 32, paddingTop: i === 0 ? 0 : 32, borderTop: i === 0 ? "none" : "1px solid #1a1a1a" }}>
-                  <div style={{ fontFamily: "var(--font-playfair)", fontWeight: 700, fontSize: "1.1rem", color: "#c9a84c", paddingTop: 2 }}>{item.year}</div>
-                  <div style={{ fontSize: "0.88rem", color: "#999", lineHeight: 1.75 }}>{item.text}</div>
-                </div>
-              ))}
-            </div>
+            {[
+              { year: "2018", text: "Монументальный художник Елизавета Козырь создала концептуальную серию работ, заложив визуальный фундамент темы." },
+              { year: "2021", text: "Сергей Кожуховский, работая в ППК РЭО, создал первые объекты из электронных компонентов и дал проекту официальное название." },
+              { year: "2022", text: "«Экология космоса» вышла в публичное пространство. Осенью проект представлен в инновационном центре «Ренова Лаб»." },
+              { year: "2023", text: "Ключевая выставка в Калуге, в ГМИК им. К.\u00a0Э.\u00a0Циолковского. В рамках «Экософии» экспозиция прошла в Архангельске, Тюмени, Санкт-Петербурге, Нижнем Новгороде, Екатеринбурге и Челябинске." },
+              { year: "2026", text: "Трансформируя промышленную археологию в искусство будущего, проект продолжает масштабировать смыслы на стыке экологии и космонавтики." },
+            ].map((item, i) => (
+              <div key={i} style={{ display: "grid", gridTemplateColumns: "72px 1fr", gap: 28, paddingBottom: 36, paddingTop: i === 0 ? 0 : 36, borderTop: i === 0 ? "none" : "1px solid #1a1a1a" }}>
+                <div style={{ fontFamily: "var(--font-playfair)", fontWeight: 700, fontSize: "1.3rem", color: "#c9a84c", paddingTop: 2 }}>{item.year}</div>
+                <div style={{ fontSize: "1rem", color: "#999", lineHeight: 1.8 }}>{item.text}</div>
+              </div>
+            ))}
           </div>
         </div>
       </section>
@@ -164,10 +162,10 @@ export default async function Home() {
               { name: "Денис Щербаков", title: "Основатель «Фестиваль-Строй»", text: "За профессиональную застройку экспозиций, предоставление выставочной инфраструктуры и активное партнёрство с 2022 года." },
               { name: "Андрей Беляев", title: "Генеральный директор «Айфлекс»", text: "За надёжное партнёрство, проверенное годами, и неизменную поддержку наших инициатив." },
             ].map(p => (
-              <div key={p.name} style={{ padding: "28px 0 28px 0", borderTop: "1px solid #1a1a1a" }}>
-                <div style={{ fontFamily: "var(--font-playfair)", fontStyle: "italic", color: "#c9a84c", fontSize: "0.95rem", marginBottom: 4 }}>{p.name}</div>
-                <div style={{ fontSize: "0.68rem", color: "#444", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 10 }}>{p.title}</div>
-                <div style={{ fontSize: "0.82rem", color: "#666", lineHeight: 1.7 }}>{p.text}</div>
+              <div key={p.name} style={{ padding: "32px 0", borderTop: "1px solid #1a1a1a" }}>
+                <div style={{ fontFamily: "var(--font-playfair)", fontStyle: "italic", color: "#c9a84c", fontSize: "1.1rem", marginBottom: 6 }}>{p.name}</div>
+                <div style={{ fontSize: "0.8rem", color: "#444", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 12 }}>{p.title}</div>
+                <div style={{ fontSize: "0.95rem", color: "#777", lineHeight: 1.75 }}>{p.text}</div>
               </div>
             ))}
           </div>
