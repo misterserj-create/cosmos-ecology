@@ -87,7 +87,7 @@ export async function fetchEvents(): Promise<Event[]> {
     `https://api.airtable.com/v0/${APP_ID}/${EVENTS_TABLE_ID}?${params}`,
     {
       headers: { Authorization: `Bearer ${TOKEN}` },
-      next: { revalidate: 300 },
+      cache: 'no-store',
     }
   )
 
