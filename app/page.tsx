@@ -35,10 +35,11 @@ export default async function Home() {
         <div style={{ maxWidth: 1200, margin: "0 auto" }}>
           <div className="section-label" style={{ marginBottom: 8 }}>Площадки</div>
           <div className="fade-line" style={{ marginBottom: 48 }} />
-          <div className="grid-venues" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 2 }}>
+          <div className="grid-venues" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 2 }}>
             {[
               { name: "Галерея «Печатники»", dates: "6 марта — 19 апреля", address: "Москва, ул. Батюнинская, 14" },
               { name: "Музей «Спутник»", dates: "15 марта — 15 июня", address: "Москва, 2-я Рыбинская, 21, стр. 1" },
+              { name: "Галерея «ART SPACE»", dates: "10 — 19 июня", address: "Москва, Тверская, 9" },
             ].map(v => (
               <div key={v.name} style={{ background: "#0d0d0d", border: "1px solid #1a1a1a", padding: "48px 40px" }}>
                 <div style={{ fontFamily: "var(--font-playfair)", fontWeight: 700, fontSize: "1.75rem", marginBottom: 16 }}>{v.name}</div>
