@@ -41,6 +41,8 @@ export async function fetchArtworks(): Promise<Artwork[]> {
     for (const rec of data.records || []) {
       const f = rec.fields
       const imgs = f['Изображение'] || []
+      const rawImageUrl = imgs[0]?.url || ''
+      const proxyUrl = rawImageUrl ? `/api/proxy-image?url=${encodeURIComponent(rawImageUrl)}` : ''
       records.push({
         id: rec.id,
         artId: f['ID'] || '',
@@ -53,7 +55,7 @@ export async function fetchArtworks(): Promise<Artwork[]> {
         status: f['Статус'] || '',
         descShort: f['Описание (короткое)'] || '',
         curatorText: f['Кураторский текст'] || '',
-        imageUrl: imgs[0]?.url || '',
+        imageUrl: proxyUrl,
         inCatalog: f['В каталог'] === true,
         category: f['Категория'] || '',
       })
@@ -101,6 +103,8 @@ export async function fetchEvents(): Promise<Event[]> {
   return (data.records || []).map((rec: any) => {
     const f = rec.fields
     const imgs = f['Фото'] || []
+    const rawImageUrl = imgs[0]?.url || ''
+    const proxyUrl = rawImageUrl ? `/api/proxy-image?url=${encodeURIComponent(rawImageUrl)}` : ''
     return {
       id: rec.id,
       title: f['Название'] || '',
@@ -109,7 +113,7 @@ export async function fetchEvents(): Promise<Event[]> {
       place: f['Место'] || '',
       description: f['Описание'] || '',
       link: f['Ссылка'] || '',
-      imageUrl: imgs[0]?.url || '',
+      imageUrl: proxyUrl,
     }
   })
 }
