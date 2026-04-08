@@ -39,7 +39,7 @@ export default async function Home() {
             {[
               { name: "Галерея «Печатники»", dates: "6 марта — 19 апреля", address: "Москва, ул. Батюнинская, 14" },
               { name: "Музей «Спутник»", dates: "15 марта — 15 июня", address: "Москва, 2-я Рыбинская, 21, стр. 1" },
-              { name: "Галерея «ART SPACE»", dates: "10 — 19 июня", address: "Москва, Тверская, 9" },
+              { name: "Галерея «ART SPACE»", dates: "10 — 19 апреля", address: "Москва, Тверская, 9" },
             ].map(v => (
               <div key={v.name} style={{ background: "#0d0d0d", border: "1px solid #1a1a1a", padding: "48px 40px" }}>
                 <div style={{ fontFamily: "var(--font-playfair)", fontWeight: 700, fontSize: "1.75rem", marginBottom: 16 }}>{v.name}</div>
