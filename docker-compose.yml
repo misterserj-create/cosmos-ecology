@@ -1,0 +1,35 @@
+version: '3.8'
+
+services:
+  nextjs:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: cosmos-ecology
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - AIRTABLE_TOKEN=${AIRTABLE_TOKEN}
+      - AIRTABLE_APP_ID=${AIRTABLE_APP_ID}
+      - AIRTABLE_TABLE_ID=${AIRTABLE_TABLE_ID}
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  nginx:
+    image: nginx:alpine
+    container_name: cosmos-ecology-nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - /etc/letsencrypt:/etc/letsencrypt:ro
+    depends_on:
+      - nextjs
+    restart: unless-stopped
