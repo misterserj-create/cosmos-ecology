@@ -71,6 +71,32 @@ function parseArtworkRecord(rec: any): Artwork {
 }
 
 export async function fetchArtworks(): Promise<Artwork[]> {
+  // PostgreSQL — основной источник когда DATABASE_URL задан
+  if (process.env.DATABASE_URL) {
+    try {
+      const { dbArtworksPublished } = await import('./db')
+      const rows = await dbArtworksPublished()
+      return rows.map((r: Record<string, unknown>) => ({
+        id: String(r.id),
+        artId: String(r.art_id || ''),
+        title: String(r.title || ''),
+        author: String(r.author || ''),
+        technique: String(r.technique || ''),
+        materials: String(r.materials || ''),
+        size: String(r.size || ''),
+        year: Number(r.year) || 0,
+        status: String(r.status || ''),
+        descShort: String(r.desc_short || ''),
+        curatorText: String(r.curator_text || ''),
+        imageUrl: String(r.thumb_url || r.image_url || ''),
+        inCatalog: Boolean(r.in_catalog),
+        category: String(r.category || ''),
+      })).sort((a: Artwork, b: Artwork) => a.artId.localeCompare(b.artId))
+    } catch (e) {
+      console.error('DB fetch failed, falling back to cache:', e)
+    }
+  }
+
   const records: Artwork[] = []
   let offset: string | undefined
 
@@ -83,7 +109,7 @@ export async function fetchArtworks(): Promise<Artwork[]> {
         `https://api.airtable.com/v0/${APP_ID}/${TABLE_ID}?${params}`,
         {
           headers: { Authorization: `Bearer ${TOKEN}` },
-          next: { revalidate: 300 }, // кэш 5 минут
+          next: { revalidate: 300 },
         }
       )
 
@@ -137,6 +163,26 @@ function parseEventRecord(rec: any): Event {
 }
 
 export async function fetchEvents(): Promise<Event[]> {
+  // PostgreSQL — основной источник когда DATABASE_URL задан
+  if (process.env.DATABASE_URL) {
+    try {
+      const { dbEventsPublished } = await import('./db')
+      const rows = await dbEventsPublished()
+      return rows.map((r: Record<string, unknown>) => ({
+        id: String(r.id),
+        title: String(r.title || ''),
+        type: String(r.type || ''),
+        date: r.event_date ? String(r.event_date).slice(0, 10) : '',
+        place: String(r.place || ''),
+        description: String(r.description || ''),
+        link: String(r.link || ''),
+        imageUrl: String(r.thumb_url || r.image_url || ''),
+      }))
+    } catch (e) {
+      console.error('DB events fetch failed, falling back:', e)
+    }
+  }
+
   try {
     const params = new URLSearchParams({
       pageSize: '100',
