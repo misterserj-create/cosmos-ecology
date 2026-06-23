@@ -2,15 +2,16 @@ import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3'
 import sharp from 'sharp'
 
 const BUCKET = 'cosmos-ecology'
-const PUBLIC_URL = process.env.MINIO_PUBLIC_URL || 'http://185.125.103.160:9002'
+const ENDPOINT = process.env.MINIO_ENDPOINT || 'http://127.0.0.1:9002'
+const PUBLIC_URL = process.env.MINIO_PUBLIC_URL || ENDPOINT
 
 function getClient() {
   return new S3Client({
-    endpoint: process.env.MINIO_ENDPOINT || 'http://185.125.103.160:9002',
+    endpoint: ENDPOINT,
     region: 'us-east-1',
     credentials: {
-      accessKeyId: process.env.MINIO_ACCESS_KEY || 'resonance_admin',
-      secretAccessKey: process.env.MINIO_SECRET_KEY || 'Res0nance_MinIO_2026!',
+      accessKeyId: process.env.MINIO_ACCESS_KEY || '',
+      secretAccessKey: process.env.MINIO_SECRET_KEY || '',
     },
     forcePathStyle: true,
   })

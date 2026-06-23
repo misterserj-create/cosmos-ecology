@@ -9,10 +9,6 @@ function getPool() {
   return pool
 }
 
-export function isDbAvailable() {
-  return !!process.env.DATABASE_URL
-}
-
 export async function dbArtworks() {
   const p = getPool()!
   const { rows } = await p.query('SELECT * FROM artworks ORDER BY art_id')
