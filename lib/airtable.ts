@@ -1,11 +1,6 @@
 import * as fs from 'fs'
 import * as path from 'path'
 
-const TOKEN = process.env.AIRTABLE_TOKEN!
-const APP_ID = process.env.AIRTABLE_APP_ID!
-const TABLE_ID = process.env.AIRTABLE_TABLE_ID!
-const EVENTS_TABLE_ID = 'tbl6JeW1z4f8XAyaz'
-
 function loadCachedArtworks(): any[] {
   try {
     const cacheFile = path.join(process.cwd(), 'public', 'cache', 'artworks.json')
@@ -50,8 +45,6 @@ export interface Artwork {
 function parseArtworkRecord(rec: any): Artwork {
   const f = rec.fields
   const imgs = f['Изображение'] || []
-  const rawImageUrl = imgs[0]?.url || ''
-  const proxyUrl = rawImageUrl ? `/api/proxy-image?url=${encodeURIComponent(rawImageUrl)}` : ''
   return {
     id: rec.id,
     artId: f['ID'] || '',
@@ -64,7 +57,7 @@ function parseArtworkRecord(rec: any): Artwork {
     status: f['Статус'] || '',
     descShort: f['Описание (короткое)'] || '',
     curatorText: f['Кураторский текст'] || '',
-    imageUrl: proxyUrl,
+    imageUrl: imgs[0]?.url || '',
     inCatalog: f['В каталог'] === true,
     category: f['Категория'] || '',
   }
@@ -97,41 +90,8 @@ export async function fetchArtworks(): Promise<Artwork[]> {
     }
   }
 
-  const records: Artwork[] = []
-  let offset: string | undefined
-
-  try {
-    do {
-      const params = new URLSearchParams({ pageSize: '100' })
-      if (offset) params.set('offset', offset)
-
-      const res = await fetch(
-        `https://api.airtable.com/v0/${APP_ID}/${TABLE_ID}?${params}`,
-        {
-          headers: { Authorization: `Bearer ${TOKEN}` },
-          next: { revalidate: 300 },
-        }
-      )
-
-      if (!res.ok) {
-        throw new Error(`Airtable error: ${res.status}`)
-      }
-
-      const data = await res.json()
-
-      for (const rec of data.records || []) {
-        records.push(parseArtworkRecord(rec))
-      }
-
-      offset = data.offset
-    } while (offset)
-
-    return records.sort((a, b) => a.artId.localeCompare(b.artId))
-  } catch (error) {
-    console.error('Failed to fetch artworks from Airtable, using cache:', error)
-    const cachedRecords = loadCachedArtworks()
-    return cachedRecords.map(parseArtworkRecord).sort((a, b) => a.artId.localeCompare(b.artId))
-  }
+  // Fallback — локальный JSON-кэш (Airtable выведен из проекта)
+  return loadCachedArtworks().map(parseArtworkRecord).sort((a, b) => a.artId.localeCompare(b.artId))
 }
 
 export interface Event {
@@ -148,8 +108,6 @@ export interface Event {
 function parseEventRecord(rec: any): Event {
   const f = rec.fields
   const imgs = f['Фото'] || []
-  const rawImageUrl = imgs[0]?.url || ''
-  const proxyUrl = rawImageUrl ? `/api/proxy-image?url=${encodeURIComponent(rawImageUrl)}` : ''
   return {
     id: rec.id,
     title: f['Название'] || '',
@@ -158,7 +116,7 @@ function parseEventRecord(rec: any): Event {
     place: f['Место'] || '',
     description: f['Описание'] || '',
     link: f['Ссылка'] || '',
-    imageUrl: proxyUrl,
+    imageUrl: imgs[0]?.url || '',
   }
 }
 
@@ -183,31 +141,6 @@ export async function fetchEvents(): Promise<Event[]> {
     }
   }
 
-  try {
-    const params = new URLSearchParams({
-      pageSize: '100',
-      filterByFormula: '{Опубликовать}=1',
-      'sort[0][field]': 'Дата',
-      'sort[0][direction]': 'asc',
-    })
-
-    const res = await fetch(
-      `https://api.airtable.com/v0/${APP_ID}/${EVENTS_TABLE_ID}?${params}`,
-      {
-        headers: { Authorization: `Bearer ${TOKEN}` },
-        cache: 'no-store',
-      }
-    )
-
-    if (!res.ok) {
-      throw new Error(`Airtable error: ${res.status}`)
-    }
-
-    const data = await res.json()
-    return (data.records || []).map(parseEventRecord)
-  } catch (error) {
-    console.error('Failed to fetch events from Airtable, using cache:', error)
-    const cachedRecords = loadCachedEvents()
-    return cachedRecords.map(parseEventRecord)
-  }
+  // Fallback — локальный JSON-кэш (Airtable выведен из проекта)
+  return loadCachedEvents().map(parseEventRecord)
 }
