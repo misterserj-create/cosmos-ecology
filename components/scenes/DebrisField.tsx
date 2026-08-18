@@ -168,7 +168,11 @@ function Debris({ progress, lite }: { progress: DescentProgress; lite: boolean }
 
   const seeds = useMemo(() => {
     return Array.from({ length: count }, () => {
-      const radius = 1.5 + Math.random() * 1.1
+      // Реальный пояс мусора — низкая орбита (200-2000 км), плотнее всего
+      // около 800-1000 км (ESA/NASA) — в радиусах Земли это 1.03-1.34, пик
+      // около 1.13-1.16. Среднее двух случайных чисел смещает разброс к
+      // центру диапазона вместо равномерного — так же, как в реальности.
+      const radius = 1.06 + ((Math.random() + Math.random()) / 2) * 0.28
       const theta = Math.random() * Math.PI * 2
       const phi = Math.acos(2 * Math.random() - 1)
       return {
@@ -220,7 +224,9 @@ function Satellites({ progress }: { progress: DescentProgress }) {
   const seeds = useMemo(
     () =>
       Array.from({ length: SATELLITE_COUNT }, () => ({
-        radius: 1.7 + Math.random() * 0.7,
+        // Чуть дальше плотного пояса обломков — крупные спутники видны
+        // отдельно, не тонут в рое.
+        radius: 1.32 + Math.random() * 0.35,
         theta: Math.random() * Math.PI * 2,
         phi: Math.acos(2 * Math.random() - 1),
         driftSpeed: 0.01 + Math.random() * 0.02,
