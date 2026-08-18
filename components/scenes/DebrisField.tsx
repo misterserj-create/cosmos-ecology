@@ -57,10 +57,13 @@ function EarthCore() {
   )
 }
 
-// Лёгкая версия Земли для мобильных: без текстур вообще (сплошной цвет) —
-// декодирование JPEG-текстуры в GPU-память на слабых Android-GPU было
-// вероятной причиной потери WebGL-контекста на середине сессии.
+// Лёгкая версия Земли для мобильных: уменьшенная текстура 256×128 (11 КБ
+// вместо 101 КБ) — декодирование полноразмерного JPEG в GPU-память на
+// слабых Android-GPU было вероятной причиной потери WebGL-контекста.
 function EarthLite() {
+  const dayMap = useLoader(THREE.TextureLoader, "/textures/earth-daymap-lite.jpg")
+  dayMap.colorSpace = THREE.SRGBColorSpace
+
   const earthRef = useRef<THREE.Mesh>(null)
 
   useFrame((_, delta) => {
@@ -71,7 +74,7 @@ function EarthLite() {
     <group rotation={[0, 0, 0.41]}>
       <mesh ref={earthRef} rotation={[0, EARTH_INITIAL_YAW, 0]}>
         <sphereGeometry args={[1, 14, 14]} />
-        <meshStandardMaterial color="#3d5f7a" roughness={0.85} metalness={0} />
+        <meshStandardMaterial map={dayMap} roughness={0.8} metalness={0} />
       </mesh>
     </group>
   )
