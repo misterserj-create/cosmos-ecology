@@ -1,12 +1,11 @@
 import type { Metadata } from "next"
-import { Playfair_Display, Inter } from "next/font/google"
+import { PT_Sans_Narrow, Inter } from "next/font/google"
 import "./globals.css"
 
-const playfair = Playfair_Display({
-  variable: "--font-playfair",
+const condensed = PT_Sans_Narrow({
+  variable: "--font-condensed",
   subsets: ["latin", "cyrillic"],
   weight: ["400", "700"],
-  style: ["normal", "italic"],
 })
 
 const inter = Inter({
@@ -28,7 +27,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="ru" className={`${playfair.variable} ${inter.variable}`}>
+    <html lang="ru" className={`${condensed.variable} ${inter.variable}`}>
       <body className="min-h-screen flex flex-col">{children}</body>
     </html>
   )

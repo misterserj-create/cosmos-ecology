@@ -37,7 +37,7 @@ export default function Nav() {
     >
       <div style={{ maxWidth: 1200, margin: "0 auto", padding: "0 24px", display: "flex", alignItems: "center", justifyContent: "space-between", height: 64 }}>
         {/* Logo */}
-        <a href="#" style={{ fontFamily: "var(--font-playfair)", fontWeight: 700, fontSize: "0.9rem", letterSpacing: "0.1em", color: "#c9a84c", textDecoration: "none", textTransform: "uppercase" }}>
+        <a href="#" style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: "0.9rem", letterSpacing: "0.1em", color: "#c9a84c", textDecoration: "none", textTransform: "uppercase" }}>
           Экология<br style={{ display: "none" }} /> Космоса
         </a>
 

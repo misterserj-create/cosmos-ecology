@@ -1,23 +1,73 @@
 @import "tailwindcss";
 
 :root {
+  /* ── Существующая палитра (акты 5-8, Земля) ── */
   --gold: #c9a84c;
   --bg: #080808;
   --card: #111111;
   --muted: #888888;
+
+  /* ── Температурная кривая "космос → Земля" ── */
+  --space-bg: #05070b;       /* акты 1-3: холодный космос */
+  --space-accent: #8fa7bf;   /* телеметрия, служебные линии на орбите */
+  --entry-accent: #c26a3a;   /* акт 4: вход в атмосферу, разовый медный акцент */
+  --earth-bg: #0a0806;       /* акты 5-8: тёплая земля */
+  --earth-accent: var(--gold);
+
+  /* ── Типографика ── */
+  --font-display: var(--font-condensed), "Arial Narrow", sans-serif;
+  --font-body: var(--font-inter), system-ui, -apple-system, sans-serif;
+
+  /* ── Хореография ── */
+  --ease-cinematic: cubic-bezier(0.16, 1, 0.3, 1);
+  --grain-opacity: 0.045;
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
-html { scroll-behavior: smooth; }
+/* scroll-behavior: smooth сознательно не используем — конфликтует с GSAP ScrollToPlugin/ScrollTrigger, которые сами управляют хореографией скролла */
+/* overflow-x клипуем на html, не на body — иначе body становится собственным
+   скролл-контейнером (CSS форсит overflow-y:auto), и window.scrollTo/GSAP
+   промахиваются мимо реального скролла страницы */
+html { overflow-x: hidden; }
 
 body {
   background: var(--bg);
   color: #ffffff;
-  font-family: system-ui, -apple-system, sans-serif;
-  overflow-x: hidden;
+  font-family: var(--font-body);
   font-size: 16px;
   line-height: 1.7;
+}
+
+/* Зерно поверх кинематографичных сцен — премиум-текстура, не плоский рендер */
+.grain::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: var(--grain-opacity);
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* Табличные цифры для счётчиков телеметрии (акт 2) */
+.tabular-nums { font-variant-numeric: tabular-nums; }
+
+/* Начальное состояние карточек до появления через Reveal (components/Reveal.tsx) */
+.reveal-item {
+  opacity: 0;
+  transform: translateY(28px);
+  filter: blur(4px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
 
 .fade-line {

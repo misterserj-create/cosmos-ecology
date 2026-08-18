@@ -11,6 +11,10 @@ const nextConfig: NextConfig = {
         protocol: 'https',
         hostname: 'dl.airtable.com',
       },
+      {
+        protocol: 'https',
+        hostname: 'media.185-125-103-160.sslip.io',
+      },
     ],
   },
 };
