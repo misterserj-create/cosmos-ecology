@@ -4,8 +4,8 @@ import { useMemo, useRef } from "react"
 import { Canvas, useFrame, useLoader } from "@react-three/fiber"
 import * as THREE from "three"
 
-const DEBRIS_COUNT_FULL = 450
-const DEBRIS_COUNT_LITE = 120
+const DEBRIS_COUNT_FULL = 850
+const DEBRIS_COUNT_LITE = 180
 
 // Разворот сферы Земли: у THREE.SphereGeometry с u=0 экватор смотрит на -X,
 // а точка, обращённая к камере (+Z), соответствует u≈0.25 текстуры — это
@@ -33,7 +33,7 @@ function Clouds({ segments }: { segments: number }) {
   )
 }
 
-function EarthCore() {
+function EarthCore({ spin }: { spin: { current: number } }) {
   const dayMap = useLoader(THREE.TextureLoader, "/textures/earth-daymap.jpg")
   dayMap.colorSpace = THREE.SRGBColorSpace
 
@@ -41,7 +41,10 @@ function EarthCore() {
   const segments = 22
 
   useFrame((_, delta) => {
-    if (earthRef.current) earthRef.current.rotation.y += delta * 0.035
+    // Общий угол вращения — читает и рой обломков, чтобы держаться вместе
+    // с планетой одним блоком, а не расходиться с ней по фазе.
+    spin.current += delta * 0.035
+    if (earthRef.current) earthRef.current.rotation.y = EARTH_INITIAL_YAW + spin.current
   })
 
   return (
@@ -60,11 +63,12 @@ function EarthCore() {
 // Лёгкая версия Земли для мобильных: без текстур вообще (сплошной цвет) —
 // декодирование JPEG-текстуры в GPU-память на слабых Android-GPU было
 // вероятной причиной потери WebGL-контекста на середине сессии.
-function EarthLite() {
+function EarthLite({ spin }: { spin: { current: number } }) {
   const earthRef = useRef<THREE.Mesh>(null)
 
   useFrame((_, delta) => {
-    if (earthRef.current) earthRef.current.rotation.y += delta * 0.035
+    spin.current += delta * 0.035
+    if (earthRef.current) earthRef.current.rotation.y = EARTH_INITIAL_YAW + spin.current
   })
 
   return (
@@ -161,7 +165,15 @@ function Atmosphere({ progress, lite }: { progress: DescentProgress; lite: boole
   )
 }
 
-function Debris({ progress, lite }: { progress: DescentProgress; lite: boolean }) {
+function Debris({
+  progress,
+  lite,
+  spin,
+}: {
+  progress: DescentProgress
+  lite: boolean
+  spin: { current: number }
+}) {
   const ref = useRef<THREE.InstancedMesh>(null)
   const dummy = useMemo(() => new THREE.Object3D(), [])
   const count = lite ? DEBRIS_COUNT_LITE : DEBRIS_COUNT_FULL
@@ -172,16 +184,24 @@ function Debris({ progress, lite }: { progress: DescentProgress; lite: boolean }
       // около 800-1000 км (ESA/NASA) — в радиусах Земли это 1.03-1.34, пик
       // около 1.13-1.16. Среднее двух случайных чисел смещает разброс к
       // центру диапазона вместо равномерного — так же, как в реальности.
-      const radius = 1.06 + ((Math.random() + Math.random()) / 2) * 0.28
+      // ~18% рассеяны дальше (выше НОО, вплоть до МЕО) — реже, но не ноль,
+      // как на реальных снимках плотность просто убывает, а не обрывается.
+      const isFar = Math.random() < 0.18
+      const radius = isFar
+        ? 1.45 + Math.random() * 0.85
+        : 1.06 + ((Math.random() + Math.random()) / 2) * 0.28
       const theta = Math.random() * Math.PI * 2
       const phi = Math.acos(2 * Math.random() - 1)
       return {
         radius,
-        theta,
+        theta, // фиксированная фаза внутри роя — общее вращение задаёт spin
+        drift: 0,
         phi,
-        spin: Math.random() * Math.PI * 2,
+        tumble: Math.random() * Math.PI * 2,
         speed: 0.02 + Math.random() * 0.05,
-        scale: 0.012 + Math.random() * 0.03,
+        // Смещение к мелким: большинство обломков — мелкая крошка, крупные
+        // куски редки (степенное распределение вместо равномерного).
+        scale: 0.004 + Math.pow(Math.random(), 2.2) * 0.02,
       }
     })
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -194,13 +214,17 @@ function Debris({ progress, lite }: { progress: DescentProgress; lite: boolean }
     const contraction = 1 - p * 0.35
 
     seeds.forEach((s, i) => {
-      s.theta += s.speed * delta * (0.4 + p * 1.2)
+      // Основа вращения — общий угол spin (тот же, что крутит Землю), рой
+      // держится с планетой одним блоком. Собственный дрейф — небольшая
+      // добавка поверх, чтобы обломки не выглядели жёстко приклеенными.
+      s.drift += s.speed * delta * (0.4 + p * 1.2) * 0.25
+      const theta = s.theta + spin.current + s.drift
       const r = s.radius * contraction
-      const x = r * Math.sin(s.phi) * Math.cos(s.theta)
+      const x = r * Math.sin(s.phi) * Math.cos(theta)
       const y = r * Math.cos(s.phi) - p * 1.4
-      const z = r * Math.sin(s.phi) * Math.sin(s.theta)
+      const z = r * Math.sin(s.phi) * Math.sin(theta)
       dummy.position.set(x, y, z)
-      dummy.rotation.set(s.spin + p * 3, s.spin * 0.7, 0)
+      dummy.rotation.set(s.tumble + p * 3, s.tumble * 0.7, 0)
       dummy.scale.setScalar(s.scale)
       dummy.updateMatrix()
       ref.current!.setMatrixAt(i, dummy.matrix)
@@ -216,7 +240,7 @@ function Debris({ progress, lite }: { progress: DescentProgress; lite: boolean }
   )
 }
 
-const SATELLITE_COUNT = 4
+const SATELLITE_COUNT = 10
 
 function Satellites({ progress }: { progress: DescentProgress }) {
   const groupRefs = useRef<(THREE.Group | null)[]>([])
@@ -224,9 +248,9 @@ function Satellites({ progress }: { progress: DescentProgress }) {
   const seeds = useMemo(
     () =>
       Array.from({ length: SATELLITE_COUNT }, () => ({
-        // Чуть дальше плотного пояса обломков — крупные спутники видны
-        // отдельно, не тонут в рое.
-        radius: 1.32 + Math.random() * 0.35,
+        // Разброс от края плотного пояса до дальнего рассеянного слоя —
+        // крупные спутники видны и среди обломков, и поодаль.
+        radius: 1.3 + Math.random() * 0.9,
         theta: Math.random() * Math.PI * 2,
         phi: Math.acos(2 * Math.random() - 1),
         driftSpeed: 0.01 + Math.random() * 0.02,
@@ -334,6 +358,7 @@ export default function DebrisField({
   lite?: boolean
   onContextLost?: () => void
 }) {
+  const spin = useRef({ current: 0 }).current
   return (
     <Canvas
       style={{ width: "100%", height: "100%", display: "block" }}
@@ -353,10 +378,10 @@ export default function DebrisField({
     >
       <ambientLight intensity={0.25} />
       <directionalLight position={[3, 2, 2]} intensity={1.4} color="#fff6e8" />
-      {lite ? <EarthLite /> : <EarthCore />}
+      {lite ? <EarthLite spin={spin} /> : <EarthCore spin={spin} />}
       {!lite && <Moon />}
       <Atmosphere progress={progress} lite={lite} />
-      <Debris progress={progress} lite={lite} />
+      <Debris progress={progress} lite={lite} spin={spin} />
       {!lite && <Satellites progress={progress} />}
       {!lite && <Streaks />}
       <Rig progress={progress} />
