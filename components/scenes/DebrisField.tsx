@@ -33,12 +33,12 @@ function Clouds({ segments }: { segments: number }) {
   )
 }
 
-function EarthCore({ lite }: { lite: boolean }) {
+function EarthCore() {
   const dayMap = useLoader(THREE.TextureLoader, "/textures/earth-daymap.jpg")
   dayMap.colorSpace = THREE.SRGBColorSpace
 
   const earthRef = useRef<THREE.Mesh>(null)
-  const segments = lite ? 16 : 22
+  const segments = 22
 
   useFrame((_, delta) => {
     if (earthRef.current) earthRef.current.rotation.y += delta * 0.035
@@ -52,9 +52,27 @@ function EarthCore({ lite }: { lite: boolean }) {
         <sphereGeometry args={[1, segments, segments]} />
         <meshStandardMaterial map={dayMap} roughness={0.75} metalness={0.05} />
       </mesh>
-      {/* Облака — отдельный компонент: если он не смонтирован (lite), его
-          useLoader не срабатывает вообще, и текстура не запрашивается. */}
-      {!lite && <Clouds segments={segments} />}
+      <Clouds segments={segments} />
+    </group>
+  )
+}
+
+// Лёгкая версия Земли для мобильных: без текстур вообще (сплошной цвет) —
+// декодирование JPEG-текстуры в GPU-память на слабых Android-GPU было
+// вероятной причиной потери WebGL-контекста на середине сессии.
+function EarthLite() {
+  const earthRef = useRef<THREE.Mesh>(null)
+
+  useFrame((_, delta) => {
+    if (earthRef.current) earthRef.current.rotation.y += delta * 0.035
+  })
+
+  return (
+    <group rotation={[0, 0, 0.41]}>
+      <mesh ref={earthRef} rotation={[0, EARTH_INITIAL_YAW, 0]}>
+        <sphereGeometry args={[1, 14, 14]} />
+        <meshStandardMaterial color="#3d5f7a" roughness={0.85} metalness={0} />
+      </mesh>
     </group>
   )
 }
@@ -329,7 +347,7 @@ export default function DebrisField({
     >
       <ambientLight intensity={0.25} />
       <directionalLight position={[3, 2, 2]} intensity={1.4} color="#fff6e8" />
-      <EarthCore lite={lite} />
+      {lite ? <EarthLite /> : <EarthCore />}
       {!lite && <Moon />}
       <Atmosphere progress={progress} lite={lite} />
       <Debris progress={progress} lite={lite} />

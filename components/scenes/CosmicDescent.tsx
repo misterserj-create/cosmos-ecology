@@ -29,11 +29,15 @@ export default function CosmicDescent({ children }: { children: React.ReactNode 
   const [sceneKey, setSceneKey] = useState(0)
   const contextLossCount = useRef(0)
 
+  const liteRef = useRef(false)
+
   function handleContextLost() {
     contextLossCount.current += 1
-    if (contextLossCount.current > 1) {
-      // Контекст теряется повторно — вместо бесконечных попыток пересоздать
-      // WebGL остаёмся на статичном градиенте, чтобы не зависнуть на чёрном.
+    // На мобильной (lite) сцене повторные попытки пересоздать контекст на и
+    // так слабом GPU обычно приводят к тому же краху — раньше это выглядело
+    // как "мигнуло и почернело". Сразу и окончательно уходим на статичный
+    // градиент, без попытки реанимации. На десктопе даём одну попытку.
+    if (liteRef.current || contextLossCount.current > 1) {
       setCanRenderScene(false)
       return
     }
@@ -42,17 +46,14 @@ export default function CosmicDescent({ children }: { children: React.ReactNode 
 
   useEffect(() => {
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches
-    // Пробовали держать облегчённую WebGL-сцену на мобильных (см. lite в
-    // DebrisField) — на реальном Android словили чёрный экран, а это хуже,
-    // чем статичный градиент. Мобильные/тач-устройства снова получают только
-    // статичный фон, WebGL — десктоп. Ширина экрана одна не ловит все
-    // телефоны/планшеты (часть Android-устройств шире 560px), поэтому
-    // дополнительно смотрим на тип указателя и UA.
+    // Ширина экрана одна не ловит все телефоны/планшеты (часть Android-
+    // устройств шире 560px), поэтому дополнительно смотрим на тип указателя и UA.
     const isCoarsePointer = window.matchMedia("(pointer: coarse)").matches
     const isMobileUA = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent)
     const isMobile = isCoarsePointer || isMobileUA || window.innerWidth < 900
-    setCanRenderScene(!reduced && !isMobile)
-    setLite(false)
+    setCanRenderScene(!reduced)
+    setLite(isMobile)
+    liteRef.current = isMobile
   }, [])
 
   useEffect(() => {
