@@ -4,36 +4,48 @@ import { useMemo, useRef } from "react"
 import { Canvas, useFrame, useLoader } from "@react-three/fiber"
 import * as THREE from "three"
 
-const DEBRIS_COUNT = 450
+const DEBRIS_COUNT_FULL = 450
+const DEBRIS_COUNT_LITE = 120
 
 /** Прогресс "спуска" 0..1, читается каждый кадр из ref — без React-перерендеров на скролл. */
 export type DescentProgress = { current: number }
 
-function EarthCore() {
-  const [dayMap, cloudsMap] = useLoader(THREE.TextureLoader, [
-    "/textures/earth-daymap.jpg",
-    "/textures/earth-clouds.jpg",
-  ])
-  dayMap.colorSpace = THREE.SRGBColorSpace
-
-  const earthRef = useRef<THREE.Mesh>(null)
+function Clouds({ segments }: { segments: number }) {
+  const cloudsMap = useLoader(THREE.TextureLoader, "/textures/earth-clouds.jpg")
   const cloudsRef = useRef<THREE.Mesh>(null)
 
   useFrame((_, delta) => {
-    if (earthRef.current) earthRef.current.rotation.y += delta * 0.035
     if (cloudsRef.current) cloudsRef.current.rotation.y += delta * 0.05
+  })
+
+  return (
+    <mesh ref={cloudsRef} scale={1.012}>
+      <sphereGeometry args={[1, segments, segments]} />
+      <meshStandardMaterial map={cloudsMap} transparent opacity={0.3} depthWrite={false} />
+    </mesh>
+  )
+}
+
+function EarthCore({ lite }: { lite: boolean }) {
+  const dayMap = useLoader(THREE.TextureLoader, "/textures/earth-daymap.jpg")
+  dayMap.colorSpace = THREE.SRGBColorSpace
+
+  const earthRef = useRef<THREE.Mesh>(null)
+  const segments = lite ? 16 : 22
+
+  useFrame((_, delta) => {
+    if (earthRef.current) earthRef.current.rotation.y += delta * 0.035
   })
 
   return (
     <group rotation={[0, 0, 0.41]}>
       <mesh ref={earthRef}>
-        <sphereGeometry args={[1, 22, 22]} />
+        <sphereGeometry args={[1, segments, segments]} />
         <meshStandardMaterial map={dayMap} roughness={0.75} metalness={0.05} />
       </mesh>
-      <mesh ref={cloudsRef} scale={1.012}>
-        <sphereGeometry args={[1, 22, 22]} />
-        <meshStandardMaterial map={cloudsMap} transparent opacity={0.3} depthWrite={false} />
-      </mesh>
+      {/* Облака — отдельный компонент: если он не смонтирован (lite), его
+          useLoader не срабатывает вообще, и текстура не запрашивается. */}
+      {!lite && <Clouds segments={segments} />}
     </group>
   )
 }
@@ -73,7 +85,7 @@ function Moon() {
   )
 }
 
-function Atmosphere({ progress }: { progress: DescentProgress }) {
+function Atmosphere({ progress, lite }: { progress: DescentProgress; lite: boolean }) {
   const ref = useRef<THREE.ShaderMaterial>(null)
 
   const uniforms = useMemo(
@@ -91,7 +103,7 @@ function Atmosphere({ progress }: { progress: DescentProgress }) {
 
   return (
     <mesh scale={1.06}>
-      <sphereGeometry args={[1, 26, 26]} />
+      <sphereGeometry args={[1, lite ? 16 : 26, lite ? 16 : 26]} />
       <shaderMaterial
         ref={ref}
         uniforms={uniforms}
@@ -122,12 +134,13 @@ function Atmosphere({ progress }: { progress: DescentProgress }) {
   )
 }
 
-function Debris({ progress }: { progress: DescentProgress }) {
+function Debris({ progress, lite }: { progress: DescentProgress; lite: boolean }) {
   const ref = useRef<THREE.InstancedMesh>(null)
   const dummy = useMemo(() => new THREE.Object3D(), [])
+  const count = lite ? DEBRIS_COUNT_LITE : DEBRIS_COUNT_FULL
 
   const seeds = useMemo(() => {
-    return Array.from({ length: DEBRIS_COUNT }, () => {
+    return Array.from({ length: count }, () => {
       const radius = 1.5 + Math.random() * 1.1
       const theta = Math.random() * Math.PI * 2
       const phi = Math.acos(2 * Math.random() - 1)
@@ -140,7 +153,8 @@ function Debris({ progress }: { progress: DescentProgress }) {
         scale: 0.012 + Math.random() * 0.03,
       }
     })
-  }, [])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [count])
 
   useFrame((_, delta) => {
     if (!ref.current) return
@@ -164,7 +178,7 @@ function Debris({ progress }: { progress: DescentProgress }) {
   })
 
   return (
-    <instancedMesh ref={ref} args={[undefined, undefined, DEBRIS_COUNT]}>
+    <instancedMesh key={count} ref={ref} args={[undefined, undefined, count]}>
       <icosahedronGeometry args={[1, 0]} />
       <meshStandardMaterial color="#9aa4ad" roughness={0.6} metalness={0.4} />
     </instancedMesh>
@@ -278,15 +292,19 @@ function Rig({ progress }: { progress: DescentProgress }) {
 
 export default function DebrisField({
   progress,
+  lite = false,
   onContextLost,
 }: {
   progress: DescentProgress
+  /** Урезанная версия для тач-устройств: меньше частиц, без Луны/спутников/
+   *  пролётов/облаков — стабильность на слабых мобильных GPU важнее полноты. */
+  lite?: boolean
   onContextLost?: () => void
 }) {
   return (
     <Canvas
       style={{ width: "100%", height: "100%", display: "block" }}
-      dpr={[1, 1.25]}
+      dpr={lite ? 1 : [1, 1.25]}
       camera={{ fov: 45, position: [0, 2.6, 4.4] }}
       gl={{ antialias: false, alpha: true, powerPreference: "low-power" }}
       onCreated={state => {
@@ -302,12 +320,12 @@ export default function DebrisField({
     >
       <ambientLight intensity={0.25} />
       <directionalLight position={[3, 2, 2]} intensity={1.4} color="#fff6e8" />
-      <EarthCore />
-      <Moon />
-      <Atmosphere progress={progress} />
-      <Debris progress={progress} />
-      <Satellites progress={progress} />
-      <Streaks />
+      <EarthCore lite={lite} />
+      {!lite && <Moon />}
+      <Atmosphere progress={progress} lite={lite} />
+      <Debris progress={progress} lite={lite} />
+      {!lite && <Satellites progress={progress} />}
+      {!lite && <Streaks />}
       <Rig progress={progress} />
     </Canvas>
   )

@@ -24,6 +24,7 @@ export default function CosmicDescent({ children }: { children: React.ReactNode 
   const washRef = useRef<HTMLDivElement>(null)
   const progress = useRef<DescentProgress>({ current: 0 })
   const [canRenderScene, setCanRenderScene] = useState(false)
+  const [lite, setLite] = useState(false)
   const [inView, setInView] = useState(false)
   const [sceneKey, setSceneKey] = useState(0)
   const contextLossCount = useRef(0)
@@ -42,13 +43,15 @@ export default function CosmicDescent({ children }: { children: React.ReactNode 
   useEffect(() => {
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches
     // Ширина экрана одна не ловит все телефоны/планшеты (часть Android-устройств
-    // шире 560px), а мобильные GPU/драйверы гораздо чаще ломают WebGL, чем
-    // десктопные — поэтому дополнительно отсекаем по типу указателя и UA.
+    // шире 560px) — дополнительно смотрим на тип указателя и UA. На мобильных
+    // сцена не отключается целиком, а идёт в облегчённом режиме (см. lite в
+    // DebrisField): меньше частиц, без Луны/спутников/атмосферы.
     const isCoarsePointer = window.matchMedia("(pointer: coarse)").matches
     const isMobileUA = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent)
-    const tooNarrow = window.innerWidth < 900
-    const isMobile = isCoarsePointer || isMobileUA || tooNarrow
-    setCanRenderScene(!reduced && !isMobile)
+    const isMobile = isCoarsePointer || isMobileUA || window.innerWidth < 900
+    const tooTinyToBother = window.innerWidth < 340
+    setCanRenderScene(!reduced && !tooTinyToBother)
+    setLite(isMobile)
   }, [])
 
   useEffect(() => {
@@ -112,6 +115,7 @@ export default function CosmicDescent({ children }: { children: React.ReactNode 
             <DebrisField
               key={sceneKey}
               progress={progress.current}
+              lite={lite}
               onContextLost={handleContextLost}
             />
           )}
