@@ -42,16 +42,17 @@ export default function CosmicDescent({ children }: { children: React.ReactNode 
 
   useEffect(() => {
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches
-    // Ширина экрана одна не ловит все телефоны/планшеты (часть Android-устройств
-    // шире 560px) — дополнительно смотрим на тип указателя и UA. На мобильных
-    // сцена не отключается целиком, а идёт в облегчённом режиме (см. lite в
-    // DebrisField): меньше частиц, без Луны/спутников/атмосферы.
+    // Пробовали держать облегчённую WebGL-сцену на мобильных (см. lite в
+    // DebrisField) — на реальном Android словили чёрный экран, а это хуже,
+    // чем статичный градиент. Мобильные/тач-устройства снова получают только
+    // статичный фон, WebGL — десктоп. Ширина экрана одна не ловит все
+    // телефоны/планшеты (часть Android-устройств шире 560px), поэтому
+    // дополнительно смотрим на тип указателя и UA.
     const isCoarsePointer = window.matchMedia("(pointer: coarse)").matches
     const isMobileUA = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent)
     const isMobile = isCoarsePointer || isMobileUA || window.innerWidth < 900
-    const tooTinyToBother = window.innerWidth < 340
-    setCanRenderScene(!reduced && !tooTinyToBother)
-    setLite(isMobile)
+    setCanRenderScene(!reduced && !isMobile)
+    setLite(false)
   }, [])
 
   useEffect(() => {
