@@ -38,6 +38,41 @@ function EarthCore() {
   )
 }
 
+const MOON_ORBIT_RADIUS = 3.3
+
+function Moon() {
+  const moonMap = useLoader(THREE.TextureLoader, "/textures/moon.jpg")
+  moonMap.colorSpace = THREE.SRGBColorSpace
+
+  const groupRef = useRef<THREE.Group>(null)
+  const meshRef = useRef<THREE.Mesh>(null)
+  const angle = useRef(Math.random() * Math.PI * 2)
+
+  useFrame((_, delta) => {
+    // Орбита не завязана на progress спуска — Луна чистая, это только
+    // техногенный мусор толпится ближе к Земле, а не сама планетная система.
+    angle.current += delta * 0.045
+    if (groupRef.current) {
+      groupRef.current.position.set(
+        Math.cos(angle.current) * MOON_ORBIT_RADIUS,
+        0.35,
+        Math.sin(angle.current) * MOON_ORBIT_RADIUS
+      )
+    }
+    // Приливный захват: Луна всегда обращена одной стороной к Земле.
+    if (meshRef.current) meshRef.current.rotation.y = angle.current
+  })
+
+  return (
+    <group ref={groupRef}>
+      <mesh ref={meshRef}>
+        <sphereGeometry args={[0.27, 32, 32]} />
+        <meshStandardMaterial map={moonMap} roughness={0.95} metalness={0} />
+      </mesh>
+    </group>
+  )
+}
+
 function Atmosphere({ progress }: { progress: DescentProgress }) {
   const ref = useRef<THREE.ShaderMaterial>(null)
 
@@ -268,6 +303,7 @@ export default function DebrisField({
       <ambientLight intensity={0.25} />
       <directionalLight position={[3, 2, 2]} intensity={1.4} color="#fff6e8" />
       <EarthCore />
+      <Moon />
       <Atmosphere progress={progress} />
       <Debris progress={progress} />
       <Satellites progress={progress} />
