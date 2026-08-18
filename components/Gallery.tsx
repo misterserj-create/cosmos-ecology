@@ -114,6 +114,7 @@ export default function Gallery({ artworks }: { artworks: Artwork[] }) {
                   src={art.imageUrl}
                   alt={art.title}
                   fill
+                  unoptimized
                   sizes="(max-width: 768px) 50vw, 280px"
                   style={{ objectFit: "cover", transition: "transform 0.5s var(--ease-cinematic)" }}
                   className="art-card-img"
@@ -145,7 +146,7 @@ export default function Gallery({ artworks }: { artworks: Artwork[] }) {
           >
             <div style={{ background: "#111", position: "relative", aspectRatio: "4 / 3", minWidth: 0 }}>
               {selected.imageUrl && (
-                <Image src={selected.imageUrl} alt={selected.title} fill sizes="450px" style={{ objectFit: "contain" }} />
+                <Image src={selected.imageUrl} alt={selected.title} fill unoptimized sizes="450px" style={{ objectFit: "contain" }} />
               )}
             </div>
             <div style={{ padding: 32, display: "flex", flexDirection: "column", gap: 12, minWidth: 0 }}>
