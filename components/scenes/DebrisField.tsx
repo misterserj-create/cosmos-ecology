@@ -4,7 +4,7 @@ import { useMemo, useRef } from "react"
 import { Canvas, useFrame, useLoader } from "@react-three/fiber"
 import * as THREE from "three"
 
-const DEBRIS_COUNT = 700
+const DEBRIS_COUNT = 450
 
 /** Прогресс "спуска" 0..1, читается каждый кадр из ref — без React-перерендеров на скролл. */
 export type DescentProgress = { current: number }
@@ -27,11 +27,11 @@ function EarthCore() {
   return (
     <group rotation={[0, 0, 0.41]}>
       <mesh ref={earthRef}>
-        <sphereGeometry args={[1, 32, 32]} />
+        <sphereGeometry args={[1, 22, 22]} />
         <meshStandardMaterial map={dayMap} roughness={0.75} metalness={0.05} />
       </mesh>
       <mesh ref={cloudsRef} scale={1.012}>
-        <sphereGeometry args={[1, 32, 32]} />
+        <sphereGeometry args={[1, 22, 22]} />
         <meshStandardMaterial map={cloudsMap} transparent opacity={0.3} depthWrite={false} />
       </mesh>
     </group>
@@ -66,7 +66,7 @@ function Moon() {
   return (
     <group ref={groupRef}>
       <mesh ref={meshRef}>
-        <sphereGeometry args={[0.27, 32, 32]} />
+        <sphereGeometry args={[0.27, 18, 18]} />
         <meshStandardMaterial map={moonMap} roughness={0.95} metalness={0} />
       </mesh>
     </group>
@@ -91,7 +91,7 @@ function Atmosphere({ progress }: { progress: DescentProgress }) {
 
   return (
     <mesh scale={1.06}>
-      <sphereGeometry args={[1, 48, 48]} />
+      <sphereGeometry args={[1, 26, 26]} />
       <shaderMaterial
         ref={ref}
         uniforms={uniforms}
@@ -171,7 +171,7 @@ function Debris({ progress }: { progress: DescentProgress }) {
   )
 }
 
-const SATELLITE_COUNT = 6
+const SATELLITE_COUNT = 4
 
 function Satellites({ progress }: { progress: DescentProgress }) {
   const groupRefs = useRef<(THREE.Group | null)[]>([])
@@ -225,7 +225,7 @@ function Satellites({ progress }: { progress: DescentProgress }) {
   )
 }
 
-const STREAK_COUNT = 7
+const STREAK_COUNT = 4
 
 function Streaks() {
   const refs = useRef<(THREE.Mesh | null)[]>([])
@@ -286,7 +286,7 @@ export default function DebrisField({
   return (
     <Canvas
       style={{ width: "100%", height: "100%", display: "block" }}
-      dpr={[1, 1.5]}
+      dpr={[1, 1.25]}
       camera={{ fov: 45, position: [0, 2.6, 4.4] }}
       gl={{ antialias: false, alpha: true, powerPreference: "low-power" }}
       onCreated={state => {

@@ -41,8 +41,14 @@ export default function CosmicDescent({ children }: { children: React.ReactNode 
 
   useEffect(() => {
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches
-    const tooNarrow = window.innerWidth < 560
-    setCanRenderScene(!reduced && !tooNarrow)
+    // Ширина экрана одна не ловит все телефоны/планшеты (часть Android-устройств
+    // шире 560px), а мобильные GPU/драйверы гораздо чаще ломают WebGL, чем
+    // десктопные — поэтому дополнительно отсекаем по типу указателя и UA.
+    const isCoarsePointer = window.matchMedia("(pointer: coarse)").matches
+    const isMobileUA = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent)
+    const tooNarrow = window.innerWidth < 900
+    const isMobile = isCoarsePointer || isMobileUA || tooNarrow
+    setCanRenderScene(!reduced && !isMobile)
   }, [])
 
   useEffect(() => {
