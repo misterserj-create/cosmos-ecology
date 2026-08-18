@@ -7,6 +7,13 @@ import * as THREE from "three"
 const DEBRIS_COUNT_FULL = 450
 const DEBRIS_COUNT_LITE = 120
 
+// Разворот сферы Земли: у THREE.SphereGeometry с u=0 экватор смотрит на -X,
+// а точка, обращённая к камере (+Z), соответствует u≈0.25 текстуры — это
+// Америка на стандартной equirectangular-карте. Нужна долгота ~50°в.д.
+// (Каспий/Казахстан, между Африкой и Россией) — пересчитано под поворот
+// вокруг Y: θ = -(90° + долгота).
+const EARTH_INITIAL_YAW = -2.9
+
 /** Прогресс "спуска" 0..1, читается каждый кадр из ref — без React-перерендеров на скролл. */
 export type DescentProgress = { current: number }
 
@@ -19,7 +26,7 @@ function Clouds({ segments }: { segments: number }) {
   })
 
   return (
-    <mesh ref={cloudsRef} scale={1.012}>
+    <mesh ref={cloudsRef} rotation={[0, EARTH_INITIAL_YAW, 0]} scale={1.012}>
       <sphereGeometry args={[1, segments, segments]} />
       <meshStandardMaterial map={cloudsMap} transparent opacity={0.3} depthWrite={false} />
     </mesh>
@@ -39,7 +46,9 @@ function EarthCore({ lite }: { lite: boolean }) {
 
   return (
     <group rotation={[0, 0, 0.41]}>
-      <mesh ref={earthRef}>
+      {/* Начальный разворот: долгота ~35°в.д. (между Африкой и Россией)
+          смотрит на камеру, а не Америка, которая там была по умолчанию. */}
+      <mesh ref={earthRef} rotation={[0, EARTH_INITIAL_YAW, 0]}>
         <sphereGeometry args={[1, segments, segments]} />
         <meshStandardMaterial map={dayMap} roughness={0.75} metalness={0.05} />
       </mesh>
