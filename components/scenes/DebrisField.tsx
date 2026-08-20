@@ -167,11 +167,9 @@ function Atmosphere({ progress, lite }: { progress: DescentProgress; lite: boole
 function Debris({
   progress,
   lite,
-  spin,
 }: {
   progress: DescentProgress
   lite: boolean
-  spin: { current: number }
 }) {
   const ref = useRef<THREE.InstancedMesh>(null)
   const dummy = useMemo(() => new THREE.Object3D(), [])
@@ -183,27 +181,38 @@ function Debris({
       // около 800-1000 км (ESA/NASA) — в радиусах Земли это 1.03-1.34, пик
       // около 1.13-1.16. Среднее двух случайных чисел смещает разброс к
       // центру диапазона вместо равномерного — так же, как в реальности.
-      // ~18% рассеяны дальше (выше НОО, вплоть до МЕО) — реже, но не ноль,
-      // как на реальных снимках плотность просто убывает, а не обрывается.
-      // Ближний край почти вплотную к атмосфере (1.02) — без тёмного зазора
-      // между свечением (scale 1.06) и роем, из-за которого обломки читались
-      // как отдельная оболочка, подвешенная в пустоте отдельно от планеты.
+      // ~14% рассеяны дальше (выше НОО, вплоть до МЕО) — реже, но не ноль.
       const isFar = Math.random() < 0.14
       const radius = isFar
         ? 1.35 + Math.random() * 0.7
         : 1.02 + ((Math.random() + Math.random()) / 2) * 0.22
       const theta = Math.random() * Math.PI * 2
-      const phi = Math.acos(2 * Math.random() - 1)
+      // Равномерная сфера по phi выглядит как статичное облако — вращение
+      // на глаз незаметно (она ротационно-симметрична), и это и читалось
+      // как "мусор сам по себе". 65% частиц прижаты к экваториальной
+      // плоскости (реальный пояс НОО почти плоский), это даёт узнаваемый
+      // наклонный пояс, видимый даже на неподвижном кадре — как у Земли
+      // с её наклоном оси, а не бесформенное гало точек.
+      const isBelt = Math.random() < 0.65
+      const phi = isBelt
+        ? Math.PI / 2 + (Math.random() + Math.random() - 1) * 0.55
+        : Math.acos(2 * Math.random() - 1)
       return {
         radius,
-        theta, // фиксированная фаза внутри роя — общее вращение задаёт spin
+        theta,
         drift: 0,
+        // Кеплеровская угловая скорость (∝ r^-1.5) — ближние обломки видимо
+        // обгоняют дальние и саму Землю, а не крутятся одним жёстким блоком
+        // с планетой. Реальный НОО-мусор облетает Землю за ~90 минут, Земля
+        // вращается за сутки — они физически НЕ должны двигаться синхронно,
+        // именно разница в скорости и читается как "это орбита", а не сцепка.
+        driftSpeed: 0.032 / Math.pow(radius, 1.5),
         phi,
         tumble: Math.random() * Math.PI * 2,
-        speed: 0.02 + Math.random() * 0.05,
         // Смещение к мелким: большинство обломков — мелкая крошка, крупные
-        // куски редки (степенное распределение вместо равномерного).
-        scale: 0.004 + Math.pow(Math.random(), 2.2) * 0.02,
+        // куски редки (степенное распределение вместо равномерного). Минимум
+        // поднят, чтобы силуэты были различимы на фоне диска Земли.
+        scale: 0.006 + Math.pow(Math.random(), 2.2) * 0.02,
       }
     })
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -216,11 +225,8 @@ function Debris({
     const contraction = 1 - p * 0.35
 
     seeds.forEach((s, i) => {
-      // Основа вращения — общий угол spin (тот же, что крутит Землю), рой
-      // держится с планетой одним блоком. Собственный дрейф — небольшая
-      // добавка поверх, чтобы обломки не выглядели жёстко приклеенными.
-      s.drift += s.speed * delta * (0.4 + p * 1.2) * 0.25
-      const theta = s.theta + spin.current + s.drift
+      s.drift += s.driftSpeed * delta * (0.4 + p * 1.2)
+      const theta = s.theta + s.drift
       const r = s.radius * contraction
       const x = r * Math.sin(s.phi) * Math.cos(theta)
       const y = r * Math.cos(s.phi) - p * 1.4
@@ -237,28 +243,34 @@ function Debris({
   return (
     <instancedMesh key={count} ref={ref} args={[undefined, undefined, count]}>
       <icosahedronGeometry args={[1, 0]} />
-      <meshStandardMaterial color="#9aa4ad" roughness={0.6} metalness={0.4} />
+      <meshStandardMaterial color="#7c858d" roughness={0.6} metalness={0.4} />
     </instancedMesh>
   )
 }
 
 const SATELLITE_COUNT = 10
 
-function Satellites({ progress, spin }: { progress: DescentProgress; spin: { current: number } }) {
+function Satellites({ progress }: { progress: DescentProgress }) {
   const groupRefs = useRef<(THREE.Group | null)[]>([])
 
   const seeds = useMemo(
     () =>
-      Array.from({ length: SATELLITE_COUNT }, () => ({
-        // Ближе к рою обломков, без разрыва до дальнего рассеянного слоя.
-        radius: 1.15 + Math.random() * 0.5,
-        theta: Math.random() * Math.PI * 2,
-        phi: Math.acos(2 * Math.random() - 1),
-        driftSpeed: 0.006 + Math.random() * 0.012,
-        driftPhase: 0,
-        tumble: new THREE.Vector3(Math.random() - 0.5, Math.random() - 0.5, Math.random() - 0.5).normalize(),
-        tumbleSpeed: 0.15 + Math.random() * 0.25,
-      })),
+      Array.from({ length: SATELLITE_COUNT }, () => {
+        const radius = 1.15 + Math.random() * 0.5
+        return {
+          // Ближе к рою обломков, без разрыва до дальнего рассеянного слоя.
+          radius,
+          theta: Math.random() * Math.PI * 2,
+          phi: Math.acos(2 * Math.random() - 1),
+          // Своя орбитальная скорость (кеплеровская, как у роя обломков) —
+          // спутники видимо облетают планету, а не крутятся вместе с ней
+          // одним жёстким блоком.
+          driftSpeed: 0.03 / Math.pow(radius, 1.5),
+          driftPhase: 0,
+          tumble: new THREE.Vector3(Math.random() - 0.5, Math.random() - 0.5, Math.random() - 0.5).normalize(),
+          tumbleSpeed: 0.15 + Math.random() * 0.25,
+        }
+      }),
     []
   )
 
@@ -267,10 +279,8 @@ function Satellites({ progress, spin }: { progress: DescentProgress; spin: { cur
     seeds.forEach((s, i) => {
       const ref = groupRefs.current[i]
       if (!ref) return
-      // Своя добавка небольшая — база вращения общая с Землёй и роем (spin),
-      // иначе спутники читаются как отдельные тела, летящие сами по себе.
       s.driftPhase += s.driftSpeed * delta * (0.5 + p)
-      const theta = s.theta + spin.current + s.driftPhase
+      const theta = s.theta + s.driftPhase
       const r = s.radius * (1 - p * 0.35)
       ref.position.set(
         r * Math.sin(s.phi) * Math.cos(theta),
@@ -296,6 +306,48 @@ function Satellites({ progress, spin }: { progress: DescentProgress; spin: { cur
             </mesh>
           ))}
         </group>
+      ))}
+    </>
+  )
+}
+
+const ORBIT_RING_COUNT = 26
+
+// Тонкие орбитальные кольца — единственный признак "это орбита вокруг
+// планеты", который виден на НЕПОДВИЖНОМ кадре (а не только в движении).
+// Без них равномерное облако точек на скриншоте читается как случайный шум
+// в кадре, а не как структура, привязанная к Земле.
+function OrbitRings() {
+  // THREE.Line собираем целиком в JS (не через JSX-тег <line>, у него в R3F
+  // конфликт типов с SVG-элементом того же имени) и рендерим через primitive.
+  const lines = useMemo(
+    () =>
+      Array.from({ length: ORBIT_RING_COUNT }, () => {
+        const radius = 1.07 + Math.random() * 0.5
+        const points = new THREE.EllipseCurve(0, 0, radius, radius, 0, Math.PI * 2, false, 0)
+          .getPoints(64)
+          .map(p => new THREE.Vector3(p.x, 0, p.y))
+        const geometry = new THREE.BufferGeometry().setFromPoints(points)
+        const material = new THREE.LineBasicMaterial({
+          color: "#9fb4c9",
+          transparent: true,
+          opacity: 0.05 + Math.random() * 0.07,
+          depthWrite: false,
+        })
+        const line = new THREE.Line(geometry, material)
+        // Небольшой случайный наклон каждого кольца вокруг общей
+        // экваториальной плоскости — как у реальных орбитальных семейств,
+        // а не идеально плоский диск.
+        line.rotation.set((Math.random() - 0.5) * 0.85, 0, (Math.random() - 0.5) * 0.45)
+        return line
+      }),
+    []
+  )
+
+  return (
+    <>
+      {lines.map((line, i) => (
+        <primitive key={i} object={line} />
       ))}
     </>
   )
@@ -383,14 +435,19 @@ export default function DebrisField({
     >
       <ambientLight intensity={0.25} />
       <directionalLight position={[3, 2, 2]} intensity={1.4} color="#fff6e8" />
-      {/* Общий наклон оси (0.41 рад) — на Земле, атмосфере, обломках и
-          спутниках одновременно, чтобы рой держался с планетой по одной
-          оси вращения, а не крутился отдельно вокруг вертикали. */}
+      {/* Общий наклон оси (0.41 рад) — на Земле, атмосфере, поясе обломков
+          и спутниках одновременно, чтобы пояс был наклонён так же, как ось
+          Земли, а не крутился отдельно вокруг вертикали. Собственно
+          вращение роя и спутников уже НЕ завязано на вращение Земли —
+          у орбитального мусора реальная угловая скорость выше суточной,
+          и видимая разница в скорости читается как "это орбита", а не
+          жёсткая сцепка с планетой. */}
       <group rotation={[0, 0, 0.41]}>
         {lite ? <EarthLite spin={spin} /> : <EarthCore spin={spin} />}
         <Atmosphere progress={progress} lite={lite} />
-        <Debris progress={progress} lite={lite} spin={spin} />
-        {!lite && <Satellites progress={progress} spin={spin} />}
+        {!lite && <OrbitRings />}
+        <Debris progress={progress} lite={lite} />
+        {!lite && <Satellites progress={progress} />}
       </group>
       {!lite && <Moon />}
       {!lite && <Streaks />}
