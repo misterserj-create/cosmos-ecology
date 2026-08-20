@@ -48,16 +48,15 @@ function EarthCore({ spin }: { spin: { current: number } }) {
   })
 
   return (
-    <>
+    <group rotation={[0, 0, 0.41]}>
       {/* Начальный разворот: долгота ~35°в.д. (между Африкой и Россией)
-          смотрит на камеру, а не Америка, которая там была по умолчанию.
-          Наклон оси задаётся снаружи, общей группой вместе с роем обломков. */}
+          смотрит на камеру, а не Америка, которая там была по умолчанию. */}
       <mesh ref={earthRef} rotation={[0, EARTH_INITIAL_YAW, 0]}>
         <sphereGeometry args={[1, segments, segments]} />
         <meshStandardMaterial map={dayMap} roughness={0.75} metalness={0.05} />
       </mesh>
       <Clouds segments={segments} />
-    </>
+    </group>
   )
 }
 
@@ -73,10 +72,12 @@ function EarthLite({ spin }: { spin: { current: number } }) {
   })
 
   return (
-    <mesh ref={earthRef} rotation={[0, EARTH_INITIAL_YAW, 0]}>
-      <sphereGeometry args={[1, 14, 14]} />
-      <meshStandardMaterial color="#3d5f7a" roughness={0.85} metalness={0} />
-    </mesh>
+    <group rotation={[0, 0, 0.41]}>
+      <mesh ref={earthRef} rotation={[0, EARTH_INITIAL_YAW, 0]}>
+        <sphereGeometry args={[1, 14, 14]} />
+        <meshStandardMaterial color="#3d5f7a" roughness={0.85} metalness={0} />
+      </mesh>
+    </group>
   )
 }
 
@@ -377,16 +378,11 @@ export default function DebrisField({
     >
       <ambientLight intensity={0.25} />
       <directionalLight position={[3, 2, 2]} intensity={1.4} color="#fff6e8" />
-      {/* Общий наклон оси (0.41 рад) — на Земле, атмосфере, обломках и
-          спутниках одновременно, чтобы рой держался с планетой по одной
-          оси вращения, а не крутился отдельно вокруг вертикали. */}
-      <group rotation={[0, 0, 0.41]}>
-        {lite ? <EarthLite spin={spin} /> : <EarthCore spin={spin} />}
-        <Atmosphere progress={progress} lite={lite} />
-        <Debris progress={progress} lite={lite} spin={spin} />
-        {!lite && <Satellites progress={progress} />}
-      </group>
+      {lite ? <EarthLite spin={spin} /> : <EarthCore spin={spin} />}
       {!lite && <Moon />}
+      <Atmosphere progress={progress} lite={lite} />
+      <Debris progress={progress} lite={lite} spin={spin} />
+      {!lite && <Satellites progress={progress} />}
       {!lite && <Streaks />}
       <Rig progress={progress} />
     </Canvas>
