@@ -22,6 +22,7 @@ if (typeof window !== "undefined") {
 export default function CosmicDescent({ children }: { children: React.ReactNode }) {
   const wrapperRef = useRef<HTMLDivElement>(null)
   const washRef = useRef<HTMLDivElement>(null)
+  const scrimRef = useRef<HTMLDivElement>(null)
   const progress = useRef<DescentProgress>({ current: 0 })
   const [canRenderScene, setCanRenderScene] = useState(false)
   const [lite, setLite] = useState(false)
@@ -88,7 +89,16 @@ export default function CosmicDescent({ children }: { children: React.ReactNode 
         progress.current.current = self.progress
         if (washRef.current) {
           washRef.current.style.opacity = String(
-            self.progress < 0.55 ? 0 : Math.min((self.progress - 0.55) / 0.25, 1) * 0.35
+            self.progress < 0.55 ? 0 : Math.min((self.progress - 0.55) / 0.25, 1) * 0.18
+          )
+        }
+        // Камера теперь идёт вплотную к Земле, и освещённая поверхность
+        // занимает почти весь кадр — текст разделов поверх неё не читался.
+        // Затемняем сцену по мере спуска: к середине прокрутки она уходит
+        // в фон, как затемнение в кино перед следующей сценой.
+        if (scrimRef.current) {
+          scrimRef.current.style.opacity = String(
+            Math.min(Math.max((self.progress - 0.12) / 0.33, 0), 1) * 0.72
           )
         }
       },
@@ -128,6 +138,15 @@ export default function CosmicDescent({ children }: { children: React.ReactNode 
               inset: 0,
               background: "var(--entry-accent)",
               mixBlendMode: "overlay",
+              opacity: 0,
+            }}
+          />
+          <div
+            ref={scrimRef}
+            style={{
+              position: "absolute",
+              inset: 0,
+              background: "var(--bg)",
               opacity: 0,
             }}
           />

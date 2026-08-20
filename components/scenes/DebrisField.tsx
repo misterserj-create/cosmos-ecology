@@ -4,7 +4,7 @@ import { useMemo, useRef } from "react"
 import { Canvas, useFrame, useLoader } from "@react-three/fiber"
 import * as THREE from "three"
 
-const DEBRIS_COUNT_FULL = 850
+const DEBRIS_COUNT_FULL = 1300
 const DEBRIS_COUNT_LITE = 180
 
 // Разворот сферы Земли: у THREE.SphereGeometry с u=0 экватор смотрит на -X,
@@ -38,7 +38,9 @@ function EarthCore({ spin }: { spin: { current: number } }) {
   dayMap.colorSpace = THREE.SRGBColorSpace
 
   const earthRef = useRef<THREE.Mesh>(null)
-  const segments = 22
+  // Камера теперь у самой поверхности, и при 22 сегментах край планеты
+  // становился видимо гранёным — многоугольник вместо дуги горизонта.
+  const segments = 56
 
   useFrame((_, delta) => {
     // Общий угол вращения — читает и рой обломков, чтобы держаться вместе
@@ -74,13 +76,15 @@ function EarthLite({ spin }: { spin: { current: number } }) {
 
   return (
     <mesh ref={earthRef} rotation={[0, EARTH_INITIAL_YAW, 0]}>
-      <sphereGeometry args={[1, 14, 14]} />
+      <sphereGeometry args={[1, 32, 32]} />
       <meshStandardMaterial color="#3d5f7a" roughness={0.85} metalness={0} />
     </mesh>
   )
 }
 
-const MOON_ORBIT_RADIUS = 3.3
+// Дальше прежнего: камера подошла к Земле вплотную, и с радиуса 3.3 Луна
+// висела в кадре размером с добрый астероид.
+const MOON_ORBIT_RADIUS = 6.5
 
 function Moon() {
   const moonMap = useLoader(THREE.TextureLoader, "/textures/moon.jpg")
@@ -108,22 +112,78 @@ function Moon() {
   return (
     <group ref={groupRef}>
       <mesh ref={meshRef}>
-        <sphereGeometry args={[0.27, 18, 18]} />
+        <sphereGeometry args={[0.32, 22, 22]} />
         <meshStandardMaterial map={moonMap} roughness={0.95} metalness={0} />
       </mesh>
     </group>
   )
 }
 
-function Atmosphere({ progress, lite }: { progress: DescentProgress; lite: boolean }) {
+// Направление на Солнце — то же, что у directionalLight сцены. В мировых
+// координатах, чтобы наклон оси группы не уводил засветку в сторону.
+const SUN_DIR = new THREE.Vector3(-3, 1.2, 1.6).normalize()
+
+const ATMOSPHERE_VERT = `
+  varying vec3 vWorldNormal;
+  varying vec3 vViewDir;
+  void main() {
+    vec4 worldPos = modelMatrix * vec4(position, 1.0);
+    vWorldNormal = normalize(mat3(modelMatrix) * normal);
+    vViewDir = normalize(cameraPosition - worldPos.xyz);
+    gl_Position = projectionMatrix * viewMatrix * worldPos;
+  }
+`
+
+// Реальная атмосфера на снимках с орбиты — не ровное гало вокруг всего диска,
+// а тонкая яркая дуга на дневной стороне лимба, которая гаснет к терминатору.
+// Поэтому яркость умножается на освещённость Солнцем, а не только на френель.
+const ATMOSPHERE_FRAG = `
+  varying vec3 vWorldNormal;
+  varying vec3 vViewDir;
+  uniform vec3 uCold;
+  uniform vec3 uWarm;
+  uniform float uMix;
+  uniform vec3 uSun;
+  uniform float uPower;
+  uniform float uStrength;
+  void main() {
+    vec3 n = normalize(vWorldNormal);
+    float rim = pow(clamp(1.0 - abs(dot(n, normalize(vViewDir))), 0.0, 1.0), uPower);
+    // Мягкий терминатор: чуть заходит на ночную сторону, как настоящие сумерки.
+    float sun = clamp(dot(n, uSun) * 1.35 + 0.18, 0.0, 1.0);
+    sun = pow(sun, 1.5);
+    vec3 color = mix(uCold, uWarm, uMix);
+    gl_FragColor = vec4(color, rim * sun * uStrength * (1.0 + uMix * 0.15));
+  }
+`
+
+function AtmosphereShell({
+  progress,
+  scale,
+  segments,
+  power,
+  strength,
+  cold,
+}: {
+  progress: DescentProgress
+  scale: number
+  segments: number
+  power: number
+  strength: number
+  cold: string
+}) {
   const ref = useRef<THREE.ShaderMaterial>(null)
 
   const uniforms = useMemo(
     () => ({
-      uCold: { value: new THREE.Color("#8fa7bf") },
-      uWarm: { value: new THREE.Color("#c26a3a") },
+      uCold: { value: new THREE.Color(cold) },
+      uWarm: { value: new THREE.Color("#d97b45") },
       uMix: { value: 0 },
+      uSun: { value: SUN_DIR },
+      uPower: { value: power },
+      uStrength: { value: strength },
     }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     []
   )
 
@@ -132,8 +192,8 @@ function Atmosphere({ progress, lite }: { progress: DescentProgress; lite: boole
   })
 
   return (
-    <mesh scale={1.06}>
-      <sphereGeometry args={[1, lite ? 16 : 26, lite ? 16 : 26]} />
+    <mesh scale={scale}>
+      <sphereGeometry args={[1, segments, segments]} />
       <shaderMaterial
         ref={ref}
         uniforms={uniforms}
@@ -141,26 +201,35 @@ function Atmosphere({ progress, lite }: { progress: DescentProgress; lite: boole
         depthWrite={false}
         blending={THREE.AdditiveBlending}
         side={THREE.BackSide}
-        vertexShader={`
-          varying vec3 vNormal;
-          void main() {
-            vNormal = normalize(normalMatrix * normal);
-            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-          }
-        `}
-        fragmentShader={`
-          varying vec3 vNormal;
-          uniform vec3 uCold;
-          uniform vec3 uWarm;
-          uniform float uMix;
-          void main() {
-            float rim = pow(1.0 - abs(dot(vNormal, vec3(0.0, 0.0, 1.0))), 2.2);
-            vec3 color = mix(uCold, uWarm, uMix);
-            gl_FragColor = vec4(color, rim * 0.65);
-          }
-        `}
+        vertexShader={ATMOSPHERE_VERT}
+        fragmentShader={ATMOSPHERE_FRAG}
       />
     </mesh>
+  )
+}
+
+function Atmosphere({ progress, lite }: { progress: DescentProgress; lite: boolean }) {
+  return (
+    <>
+      {/* Тонкая яркая линия воздуха у самой поверхности. */}
+      <AtmosphereShell
+        progress={progress}
+        scale={1.022}
+        segments={lite ? 24 : 64}
+        power={4.2}
+        strength={1.15}
+        cold="#a9d6ff"
+      />
+      {/* Внешняя рассеянная дымка — даёт объём, но не превращается в кольцо. */}
+      <AtmosphereShell
+        progress={progress}
+        scale={1.11}
+        segments={lite ? 18 : 40}
+        power={2.4}
+        strength={0.28}
+        cold="#3f86d8"
+      />
+    </>
   )
 }
 
@@ -182,10 +251,10 @@ function Debris({
       // около 1.13-1.16. Среднее двух случайных чисел смещает разброс к
       // центру диапазона вместо равномерного — так же, как в реальности.
       // ~14% рассеяны дальше (выше НОО, вплоть до МЕО) — реже, но не ноль.
-      const isFar = Math.random() < 0.14
+      const isFar = Math.random() < 0.09
       const radius = isFar
-        ? 1.35 + Math.random() * 0.7
-        : 1.02 + ((Math.random() + Math.random()) / 2) * 0.22
+        ? 1.28 + Math.random() * 0.32
+        : 1.012 + ((Math.random() + Math.random()) / 2) * 0.17
       const theta = Math.random() * Math.PI * 2
       // Равномерная сфера по phi выглядит как статичное облако — вращение
       // на глаз незаметно (она ротационно-симметрична), и это и читалось
@@ -209,10 +278,10 @@ function Debris({
         driftSpeed: 0.032 / Math.pow(radius, 1.5),
         phi,
         tumble: Math.random() * Math.PI * 2,
-        // Смещение к мелким: большинство обломков — мелкая крошка, крупные
-        // куски редки (степенное распределение вместо равномерного). Минимум
-        // поднят, чтобы силуэты были различимы на фоне диска Земли.
-        scale: 0.006 + Math.pow(Math.random(), 2.2) * 0.02,
+        // Размер подобран под БЛИЗКУЮ камеру: крупный обломок занимает
+        // 6-8 экранных точек, мелкий 2-3. Прежние значения были рассчитаны
+        // на камеру вчетверо дальше и вблизи превращали крошку в астероиды.
+        scale: 0.0016 + Math.pow(Math.random(), 2.1) * 0.005,
       }
     })
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -221,15 +290,17 @@ function Debris({
   useFrame((_, delta) => {
     if (!ref.current) return
     const p = progress.current
-    // спуск: рой стягивается к камере и "падает" по мере прокрутки
-    const contraction = 1 - p * 0.35
+    // Спуск: рой чуть проседает к поверхности и сползает вниз по кадру.
+    // Раньше сжатие было втрое сильнее и обломки уходили ВНУТРЬ планеты —
+    // при близкой камере это сразу видно.
+    const contraction = 1 - p * 0.1
 
     seeds.forEach((s, i) => {
       s.drift += s.driftSpeed * delta * (0.4 + p * 1.2)
       const theta = s.theta + s.drift
       const r = s.radius * contraction
       const x = r * Math.sin(s.phi) * Math.cos(theta)
-      const y = r * Math.cos(s.phi) - p * 1.4
+      const y = r * Math.cos(s.phi) - p * 0.55
       const z = r * Math.sin(s.phi) * Math.sin(theta)
       dummy.position.set(x, y, z)
       dummy.rotation.set(s.tumble + p * 3, s.tumble * 0.7, 0)
@@ -256,7 +327,7 @@ function Satellites({ progress }: { progress: DescentProgress }) {
   const seeds = useMemo(
     () =>
       Array.from({ length: SATELLITE_COUNT }, () => {
-        const radius = 1.15 + Math.random() * 0.5
+        const radius = 1.04 + Math.random() * 0.28
         return {
           // Ближе к рою обломков, без разрыва до дальнего рассеянного слоя.
           radius,
@@ -281,10 +352,10 @@ function Satellites({ progress }: { progress: DescentProgress }) {
       if (!ref) return
       s.driftPhase += s.driftSpeed * delta * (0.5 + p)
       const theta = s.theta + s.driftPhase
-      const r = s.radius * (1 - p * 0.35)
+      const r = s.radius * (1 - p * 0.1)
       ref.position.set(
         r * Math.sin(s.phi) * Math.cos(theta),
-        r * Math.cos(s.phi) - p * 1.4,
+        r * Math.cos(s.phi) - p * 0.55,
         r * Math.sin(s.phi) * Math.sin(theta)
       )
       ref.rotateOnAxis(s.tumble, s.tumbleSpeed * delta)
@@ -294,7 +365,7 @@ function Satellites({ progress }: { progress: DescentProgress }) {
   return (
     <>
       {seeds.map((_, i) => (
-        <group key={i} ref={el => { groupRefs.current[i] = el }} scale={0.045}>
+        <group key={i} ref={el => { groupRefs.current[i] = el }} scale={0.007}>
           <mesh>
             <boxGeometry args={[1, 0.6, 0.6]} />
             <meshStandardMaterial color="#b7bcc2" roughness={0.4} metalness={0.75} />
@@ -311,48 +382,6 @@ function Satellites({ progress }: { progress: DescentProgress }) {
   )
 }
 
-const ORBIT_RING_COUNT = 26
-
-// Тонкие орбитальные кольца — единственный признак "это орбита вокруг
-// планеты", который виден на НЕПОДВИЖНОМ кадре (а не только в движении).
-// Без них равномерное облако точек на скриншоте читается как случайный шум
-// в кадре, а не как структура, привязанная к Земле.
-function OrbitRings() {
-  // THREE.Line собираем целиком в JS (не через JSX-тег <line>, у него в R3F
-  // конфликт типов с SVG-элементом того же имени) и рендерим через primitive.
-  const lines = useMemo(
-    () =>
-      Array.from({ length: ORBIT_RING_COUNT }, () => {
-        const radius = 1.07 + Math.random() * 0.5
-        const points = new THREE.EllipseCurve(0, 0, radius, radius, 0, Math.PI * 2, false, 0)
-          .getPoints(64)
-          .map(p => new THREE.Vector3(p.x, 0, p.y))
-        const geometry = new THREE.BufferGeometry().setFromPoints(points)
-        const material = new THREE.LineBasicMaterial({
-          color: "#9fb4c9",
-          transparent: true,
-          opacity: 0.05 + Math.random() * 0.07,
-          depthWrite: false,
-        })
-        const line = new THREE.Line(geometry, material)
-        // Небольшой случайный наклон каждого кольца вокруг общей
-        // экваториальной плоскости — как у реальных орбитальных семейств,
-        // а не идеально плоский диск.
-        line.rotation.set((Math.random() - 0.5) * 0.85, 0, (Math.random() - 0.5) * 0.45)
-        return line
-      }),
-    []
-  )
-
-  return (
-    <>
-      {lines.map((line, i) => (
-        <primitive key={i} object={line} />
-      ))}
-    </>
-  )
-}
-
 const STREAK_COUNT = 4
 
 function Streaks() {
@@ -360,12 +389,14 @@ function Streaks() {
 
   const seeds = useMemo(
     () =>
+      // Выше дуги горизонта и дальше от камеры — пролёты идут по чёрному
+      // небу над планетой, а не проносятся перед самым объективом.
       Array.from({ length: STREAK_COUNT }, () => ({
-        z: -3 + Math.random() * 6,
-        y: (Math.random() - 0.5) * 4,
+        z: -4 + Math.random() * 3.5,
+        y: 1.2 + Math.random() * 2.2,
         cycle: 5 + Math.random() * 4,
         offset: Math.random() * 10,
-        length: 0.15 + Math.random() * 0.25,
+        length: 0.06 + Math.random() * 0.12,
       })),
     []
   )
@@ -395,11 +426,18 @@ function Streaks() {
 }
 
 function Rig({ progress }: { progress: DescentProgress }) {
+  const target = useMemo(() => new THREE.Vector3(), [])
+
   useFrame(({ camera }) => {
     const p = progress.current
-    // орбита → вход в атмосферу: камера снижается и приближается
-    camera.position.set(0.4 * p, 2.6 - p * 2.1, 4.4 - p * 1.6)
-    camera.lookAt(0, -p * 1.2, 0)
+    // Камера стоит НА низкой орбите, а не смотрит на глобус издалека. Земля
+    // закрывает нижние две трети кадра и обрезается краями — как на снимках
+    // с орбиты. Именно из-за дальней камеры рой читался как отдельное облако
+    // вокруг шарика: теперь обломки проходят на фоне самой поверхности.
+    camera.position.set(0.35 + p * 0.2, 0.62 - p * 0.32, 1.86 - p * 0.41)
+    // Центр планеты уходит ниже кадра, в кадре остаётся дуга горизонта.
+    target.set(0, 0.88 + p * 0.27, 0)
+    camera.lookAt(target)
   })
   return null
 }
@@ -420,7 +458,7 @@ export default function DebrisField({
     <Canvas
       style={{ width: "100%", height: "100%", display: "block" }}
       dpr={lite ? 1 : [1, 1.25]}
-      camera={{ fov: 45, position: [0, 2.6, 4.4] }}
+      camera={{ fov: 34, position: [0.35, 0.62, 1.86] }}
       gl={{ antialias: false, alpha: true, powerPreference: "low-power" }}
       onCreated={state => {
         // Три.js сам делает preventDefault и умеет восстанавливать контекст,
@@ -433,8 +471,11 @@ export default function DebrisField({
         )
       }}
     >
-      <ambientLight intensity={0.25} />
-      <directionalLight position={[3, 2, 2]} intensity={1.4} color="#fff6e8" />
+      {/* Солнце сбоку: в кадре виден терминатор — освещённая половина и
+          уходящая в тень. Ночная сторона почти чёрная (низкий ambient),
+          как на реальных орбитальных снимках, и текст на ней читается. */}
+      <ambientLight intensity={0.1} />
+      <directionalLight position={[-3, 1.2, 1.6]} intensity={1.3} color="#fff6e8" />
       {/* Общий наклон оси (0.41 рад) — на Земле, атмосфере, поясе обломков
           и спутниках одновременно, чтобы пояс был наклонён так же, как ось
           Земли, а не крутился отдельно вокруг вертикали. Собственно
@@ -445,7 +486,6 @@ export default function DebrisField({
       <group rotation={[0, 0, 0.41]}>
         {lite ? <EarthLite spin={spin} /> : <EarthCore spin={spin} />}
         <Atmosphere progress={progress} lite={lite} />
-        {!lite && <OrbitRings />}
         <Debris progress={progress} lite={lite} />
         {!lite && <Satellites progress={progress} />}
       </group>
