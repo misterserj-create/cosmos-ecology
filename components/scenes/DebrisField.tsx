@@ -185,10 +185,13 @@ function Debris({
       // центру диапазона вместо равномерного — так же, как в реальности.
       // ~18% рассеяны дальше (выше НОО, вплоть до МЕО) — реже, но не ноль,
       // как на реальных снимках плотность просто убывает, а не обрывается.
-      const isFar = Math.random() < 0.18
+      // Ближний край почти вплотную к атмосфере (1.02) — без тёмного зазора
+      // между свечением (scale 1.06) и роем, из-за которого обломки читались
+      // как отдельная оболочка, подвешенная в пустоте отдельно от планеты.
+      const isFar = Math.random() < 0.14
       const radius = isFar
-        ? 1.45 + Math.random() * 0.85
-        : 1.06 + ((Math.random() + Math.random()) / 2) * 0.28
+        ? 1.35 + Math.random() * 0.7
+        : 1.02 + ((Math.random() + Math.random()) / 2) * 0.22
       const theta = Math.random() * Math.PI * 2
       const phi = Math.acos(2 * Math.random() - 1)
       return {
@@ -241,18 +244,18 @@ function Debris({
 
 const SATELLITE_COUNT = 10
 
-function Satellites({ progress }: { progress: DescentProgress }) {
+function Satellites({ progress, spin }: { progress: DescentProgress; spin: { current: number } }) {
   const groupRefs = useRef<(THREE.Group | null)[]>([])
 
   const seeds = useMemo(
     () =>
       Array.from({ length: SATELLITE_COUNT }, () => ({
-        // Разброс от края плотного пояса до дальнего рассеянного слоя —
-        // крупные спутники видны и среди обломков, и поодаль.
-        radius: 1.3 + Math.random() * 0.9,
+        // Ближе к рою обломков, без разрыва до дальнего рассеянного слоя.
+        radius: 1.15 + Math.random() * 0.5,
         theta: Math.random() * Math.PI * 2,
         phi: Math.acos(2 * Math.random() - 1),
-        driftSpeed: 0.01 + Math.random() * 0.02,
+        driftSpeed: 0.006 + Math.random() * 0.012,
+        driftPhase: 0,
         tumble: new THREE.Vector3(Math.random() - 0.5, Math.random() - 0.5, Math.random() - 0.5).normalize(),
         tumbleSpeed: 0.15 + Math.random() * 0.25,
       })),
@@ -264,12 +267,15 @@ function Satellites({ progress }: { progress: DescentProgress }) {
     seeds.forEach((s, i) => {
       const ref = groupRefs.current[i]
       if (!ref) return
-      s.theta += s.driftSpeed * delta * (0.5 + p)
+      // Своя добавка небольшая — база вращения общая с Землёй и роем (spin),
+      // иначе спутники читаются как отдельные тела, летящие сами по себе.
+      s.driftPhase += s.driftSpeed * delta * (0.5 + p)
+      const theta = s.theta + spin.current + s.driftPhase
       const r = s.radius * (1 - p * 0.35)
       ref.position.set(
-        r * Math.sin(s.phi) * Math.cos(s.theta),
+        r * Math.sin(s.phi) * Math.cos(theta),
         r * Math.cos(s.phi) - p * 1.4,
-        r * Math.sin(s.phi) * Math.sin(s.theta)
+        r * Math.sin(s.phi) * Math.sin(theta)
       )
       ref.rotateOnAxis(s.tumble, s.tumbleSpeed * delta)
     })
@@ -384,7 +390,7 @@ export default function DebrisField({
         {lite ? <EarthLite spin={spin} /> : <EarthCore spin={spin} />}
         <Atmosphere progress={progress} lite={lite} />
         <Debris progress={progress} lite={lite} spin={spin} />
-        {!lite && <Satellites progress={progress} />}
+        {!lite && <Satellites progress={progress} spin={spin} />}
       </group>
       {!lite && <Moon />}
       {!lite && <Streaks />}
