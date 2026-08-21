@@ -16,10 +16,12 @@ export default async function Home({ params }: { params: Promise<{ lang: string 
   const { lang } = await params
   if (!isLocale(lang)) notFound()
 
+  // Язык уходит в выборку: свободные тексты работ и событий приходят из базы
+  // уже переведёнными, а перечисления - по словарю в lib/site.ts.
   const [dict, artworks, events] = await Promise.all([
     getDictionary(lang),
-    fetchArtworks(),
-    fetchEvents(),
+    fetchArtworks(lang),
+    fetchEvents(lang),
   ])
   const catalog = artworks.filter(a => a.inCatalog && a.imageUrl)
   const statLabels = dict.stat
