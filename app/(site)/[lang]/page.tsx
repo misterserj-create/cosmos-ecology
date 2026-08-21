@@ -26,7 +26,7 @@ export default async function Home({ params }: { params: Promise<{ lang: string 
 
   return (
     <>
-      <Nav dict={dict.nav} locale={lang} />
+      <Nav dict={dict.nav} locale={lang} hasEvents={events.length > 0} />
 
       <CosmicDescent cityLabels={dict.scene.cities}>
         {/* ── HERO (акт 1: тишина) ── */}
@@ -63,10 +63,37 @@ export default async function Home({ params }: { params: Promise<{ lang: string 
               {VENUES.map(v => {
                 const t = dict.venues.items[v.id]
                 return (
-                  <div key={v.id} className="reveal-item" style={{ background: "#0d0d0d", border: "1px solid #1a1a1a", padding: "48px 40px", transition: "border-color 0.3s" }}>
+                  <div
+                    key={v.id}
+                    className="reveal-item"
+                    style={{
+                      background: v.current ? "#111008" : "#0d0d0d",
+                      border: v.current ? "1px solid #4a3d18" : "1px solid #1a1a1a",
+                      padding: "48px 40px",
+                      transition: "border-color 0.3s",
+                    }}
+                  >
+                    {v.current && (
+                      <div style={{ color: "#c9a84c", fontSize: "0.7rem", letterSpacing: "0.28em", textTransform: "uppercase", marginBottom: 14 }}>
+                        {dict.venues.now}
+                      </div>
+                    )}
                     <div style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: "1.75rem", marginBottom: 16 }}>{t.name}</div>
                     <div style={{ color: "#c9a84c", fontSize: "1.15rem", marginBottom: 8 }}>{t.dates}</div>
                     <div style={{ color: "#777", fontSize: "1.05rem" }}>{t.address}</div>
+                    {t.note && (
+                      <div style={{ color: "#8a8a8a", fontSize: "0.9rem", lineHeight: 1.6, marginTop: 18 }}>{t.note}</div>
+                    )}
+                    {v.url && (
+                      <a
+                        href={v.url}
+                        target="_blank"
+                        rel="noopener"
+                        style={{ display: "inline-block", marginTop: 16, color: "#c9a84c", fontSize: "0.8rem", letterSpacing: "0.18em", textTransform: "uppercase", textDecoration: "none", borderBottom: "1px solid #4a3d18", paddingBottom: 4 }}
+                      >
+                        {dict.venues.siteLink}
+                      </a>
+                    )}
                   </div>
                 )
               })}
@@ -163,13 +190,14 @@ export default async function Home({ params }: { params: Promise<{ lang: string 
       </section>
 
       {/* ── СОБЫТИЯ ── */}
-      <section id="events" className="grain" style={{ padding: "80px 24px", borderTop: "1px solid #111", position: "relative", background: "var(--earth-bg)" }}>
-        <div style={{ maxWidth: 1200, margin: "0 auto" }}>
-          <div className="section-label" style={{ marginBottom: 8 }}>{dict.events.label}</div>
-          <div className="fade-line" style={{ marginBottom: 48 }} />
-          {events.length === 0 ? (
-            <p style={{ color: "#444", fontSize: "0.9rem" }}>{dict.events.empty}</p>
-          ) : (
+      {/* Пустой раздел с заглушкой "скоро появятся" выглядит как брошенный
+          сайт. Пока событий нет, раздела нет вовсе - пункт меню тоже
+          скрывается в Nav по этому же признаку. */}
+      {events.length > 0 && (
+        <section id="events" className="grain" style={{ padding: "80px 24px", borderTop: "1px solid #111", position: "relative", background: "var(--earth-bg)" }}>
+          <div style={{ maxWidth: 1200, margin: "0 auto" }}>
+            <div className="section-label" style={{ marginBottom: 8 }}>{dict.events.label}</div>
+            <div className="fade-line" style={{ marginBottom: 48 }} />
             <Reveal className="grid-events" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(340px, 1fr))", gap: 2 }}>
               {events.map(ev => (
                 <div key={ev.id} className="reveal-item" style={{ background: "#0d0d0d", border: "1px solid #1a1a1a", overflow: "hidden" }}>
@@ -196,9 +224,9 @@ export default async function Home({ params }: { params: Promise<{ lang: string 
                 </div>
               ))}
             </Reveal>
-          )}
-        </div>
-      </section>
+          </div>
+        </section>
+      )}
 
       {/* ── ИСТОРИЯ ── */}
       <section id="history" className="grain" style={{ padding: "80px 24px", borderTop: "1px solid #111", position: "relative", background: "var(--earth-bg)" }}>

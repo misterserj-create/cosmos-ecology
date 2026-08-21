@@ -5,13 +5,23 @@ import type { Dictionary } from "@/app/(site)/[lang]/dictionaries"
 
 type NavDict = Dictionary["nav"]
 
-export default function Nav({ dict, locale }: { dict: NavDict; locale: Locale }) {
+// Раздел событий на странице показывается только когда события есть.
+// Пункт меню, ведущий в никуда, - верный признак брошенного сайта.
+export default function Nav({
+  dict,
+  locale,
+  hasEvents = true,
+}: {
+  dict: NavDict
+  locale: Locale
+  hasEvents?: boolean
+}) {
   const [scrolled, setScrolled] = useState(false)
   const [open, setOpen] = useState(false)
   const [langOpen, setLangOpen] = useState(false)
   const langRef = useRef<HTMLDivElement>(null)
 
-  const links = [
+  const allLinks = [
     { href: "#venues", label: dict.links.venues },
     { href: "#about", label: dict.links.about },
     { href: "#gallery", label: dict.links.gallery },
@@ -20,6 +30,7 @@ export default function Nav({ dict, locale }: { dict: NavDict; locale: Locale })
     { href: "#events", label: dict.links.events },
     { href: "#history", label: dict.links.history },
   ]
+  const links = hasEvents ? allLinks : allLinks.filter(l => l.href !== "#events")
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 40)
