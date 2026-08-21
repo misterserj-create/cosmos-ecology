@@ -100,6 +100,21 @@ export default async function SiteLayout({
     .filter(Boolean)
     .join(" ")
 
+  // Названия площадок и описание проекта для разметки берём из словаря
+  // языка - те же строки, что видит человек на странице. Отдельного набора
+  // переводов ради поисковика не заводим, иначе они разъедутся.
+  const dict = await getDictionary(locale)
+  const jsonLd = buildJsonLd(locale, {
+    siteName: SITE_NAME,
+    description: dict.meta.description,
+    venueNames: {
+      pechatniki: dict.venues.items.pechatniki.name,
+      sputnik: dict.venues.items.sputnik.name,
+      artspace: dict.venues.items.artspace.name,
+      vks: dict.venues.items.vks.name,
+    },
+  })
+
   return (
     <html
       lang={htmlLang[locale]}
@@ -123,7 +138,7 @@ export default async function SiteLayout({
           type="application/ld+json"
           // Разметка выставки: четыре площадки с датами и адресами, чтобы
           // поисковик показывал карточку события, а не просто ссылку.
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(buildJsonLd()) }}
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
       </body>
     </html>

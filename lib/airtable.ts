@@ -1,5 +1,13 @@
 import * as fs from 'fs'
 import * as path from 'path'
+import { defaultLocale, type Locale } from '@/i18n/config'
+import {
+  CATEGORY_LABELS,
+  EVENT_TYPE_LABELS,
+  STATUS_LABELS,
+  TECHNIQUE_LABELS,
+  enumLabel,
+} from '@/lib/site'
 
 function loadCachedArtworks(): any[] {
   try {
@@ -42,7 +50,7 @@ export interface Artwork {
   category: string
 }
 
-function parseArtworkRecord(rec: any): Artwork {
+function parseArtworkRecord(rec: any, locale: Locale): Artwork {
   const f = rec.fields
   const imgs = f['Изображение'] || []
   return {
@@ -50,40 +58,52 @@ function parseArtworkRecord(rec: any): Artwork {
     artId: f['ID'] || '',
     title: f['Название'] || '',
     author: f['Автор'] || '',
-    technique: f['Техника'] || '',
+    technique: enumLabel(TECHNIQUE_LABELS, f['Техника'] || '', locale),
     materials: f['Материалы'] || '',
     size: f['Габариты (см)'] || '',
     year: f['Год'] || 0,
-    status: f['Статус'] || '',
+    status: enumLabel(STATUS_LABELS, f['Статус'] || '', locale),
     descShort: f['Описание (короткое)'] || '',
     curatorText: f['Кураторский текст'] || '',
     imageUrl: imgs[0]?.url || '',
     inCatalog: f['В каталог'] === true,
-    category: f['Категория'] || '',
+    category: enumLabel(CATEGORY_LABELS, f['Категория'] || '', locale),
   }
 }
 
-export async function fetchArtworks(): Promise<Artwork[]> {
+/**
+ * Работы для витрины. Язык влияет на два разных слоя:
+ *
+ *   - свободные тексты (название, материалы, описания) приходят уже
+ *     наложенными в SQL: перевод есть - берётся перевод, нет - русский;
+ *   - техника, статус и категория - перечисления, они переводятся здесь по
+ *     словарю в коде, потому что значений на всю базу десяток.
+ *
+ * Запасной путь (локальный кэш) отдаёт свободные тексты по-русски: переводы
+ * живут только в базе, и подменить их нечем. Перечисления он переводит - им
+ * база не нужна.
+ */
+export async function fetchArtworks(locale: Locale = defaultLocale): Promise<Artwork[]> {
   // PostgreSQL — основной источник когда DATABASE_URL задан
   if (process.env.DATABASE_URL) {
     try {
       const { dbArtworksPublished } = await import('./db')
-      const rows = await dbArtworksPublished()
+      const rows = await dbArtworksPublished(locale)
       return rows.map((r: Record<string, unknown>) => ({
         id: String(r.id),
         artId: String(r.art_id || ''),
         title: String(r.title || ''),
         author: String(r.author || ''),
-        technique: String(r.technique || ''),
+        technique: enumLabel(TECHNIQUE_LABELS, String(r.technique || ''), locale),
         materials: String(r.materials || ''),
         size: String(r.size || ''),
         year: Number(r.year) || 0,
-        status: String(r.status || ''),
+        status: enumLabel(STATUS_LABELS, String(r.status || ''), locale),
         descShort: String(r.desc_short || ''),
         curatorText: String(r.curator_text || ''),
         imageUrl: String(r.thumb_url || r.image_url || ''),
         inCatalog: Boolean(r.in_catalog),
-        category: String(r.category || ''),
+        category: enumLabel(CATEGORY_LABELS, String(r.category || ''), locale),
       })).sort((a: Artwork, b: Artwork) => a.artId.localeCompare(b.artId))
     } catch (e) {
       console.error('DB fetch failed, falling back to cache:', e)
@@ -91,7 +111,9 @@ export async function fetchArtworks(): Promise<Artwork[]> {
   }
 
   // Fallback — локальный JSON-кэш (Airtable выведен из проекта)
-  return loadCachedArtworks().map(parseArtworkRecord).sort((a, b) => a.artId.localeCompare(b.artId))
+  return loadCachedArtworks()
+    .map(rec => parseArtworkRecord(rec, locale))
+    .sort((a, b) => a.artId.localeCompare(b.artId))
 }
 
 export interface Event {
@@ -105,13 +127,13 @@ export interface Event {
   imageUrl: string
 }
 
-function parseEventRecord(rec: any): Event {
+function parseEventRecord(rec: any, locale: Locale): Event {
   const f = rec.fields
   const imgs = f['Фото'] || []
   return {
     id: rec.id,
     title: f['Название'] || '',
-    type: f['Тип'] || '',
+    type: enumLabel(EVENT_TYPE_LABELS, f['Тип'] || '', locale),
     date: f['Дата'] || '',
     place: f['Место'] || '',
     description: f['Описание'] || '',
@@ -120,16 +142,16 @@ function parseEventRecord(rec: any): Event {
   }
 }
 
-export async function fetchEvents(): Promise<Event[]> {
+export async function fetchEvents(locale: Locale = defaultLocale): Promise<Event[]> {
   // PostgreSQL — основной источник когда DATABASE_URL задан
   if (process.env.DATABASE_URL) {
     try {
       const { dbEventsPublished } = await import('./db')
-      const rows = await dbEventsPublished()
+      const rows = await dbEventsPublished(locale)
       return rows.map((r: Record<string, unknown>) => ({
         id: String(r.id),
         title: String(r.title || ''),
-        type: String(r.type || ''),
+        type: enumLabel(EVENT_TYPE_LABELS, String(r.type || ''), locale),
         date: r.event_date ? String(r.event_date).slice(0, 10) : '',
         place: String(r.place || ''),
         description: String(r.description || ''),
@@ -142,5 +164,5 @@ export async function fetchEvents(): Promise<Event[]> {
   }
 
   // Fallback — локальный JSON-кэш (Airtable выведен из проекта)
-  return loadCachedEvents().map(parseEventRecord)
+  return loadCachedEvents().map(rec => parseEventRecord(rec, locale))
 }
