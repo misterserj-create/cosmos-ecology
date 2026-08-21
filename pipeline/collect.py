@@ -88,7 +88,8 @@ def read_feed(run: Run, source: dict[str, Any]) -> list[dict[str, Any]]:
 
     url = source["query_or_url"]
     try:
-        r = requests.get(url, timeout=30, headers={"User-Agent": "cosmos-ecology-pipeline/1.0"})
+        r = requests.get(url, timeout=30, headers={"User-Agent": "Mozilla/5.0 (compatible; cosmos-ecology-pipeline/1.0; +https://cosmosecology.ru)",
+                                  "Accept": "application/rss+xml, application/atom+xml, application/xml;q=0.9, */*;q=0.8"})
         r.raise_for_status()
         feed = feedparser.parse(r.content)
     except Exception as e:  # noqa: BLE001
