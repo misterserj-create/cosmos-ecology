@@ -104,13 +104,15 @@ export default async function SiteLayout({
     <html
       lang={htmlLang[locale]}
       className={classes}
-      // Заголовки и текст на китайском и японском отдаём Noto: подменяем
-      // сами переменные шрифтов, а не правим каждый компонент.
+      // Noto подставляется вторым в списке: латиница и кириллица остаются в
+      // фирменных PT Sans Narrow и Inter, а иероглифы и кана, которых в них
+      // нет, подхватываются из Noto по глифам. Правим переменные шрифтов, а
+      // не каждый компонент по отдельности.
       style={
         cjk
           ? ({
-              "--font-display": "var(--font-cjk), sans-serif",
-              "--font-body": "var(--font-cjk), sans-serif",
+              "--font-display": "var(--font-condensed), var(--font-cjk), sans-serif",
+              "--font-body": "var(--font-inter), var(--font-cjk), sans-serif",
             } as React.CSSProperties)
           : undefined
       }
