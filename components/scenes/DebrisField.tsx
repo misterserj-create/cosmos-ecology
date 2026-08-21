@@ -2,10 +2,14 @@
 
 import { useMemo, useRef } from "react"
 import { Canvas, useFrame, useLoader } from "@react-three/fiber"
+import { Html } from "@react-three/drei"
 import * as THREE from "three"
 
-const DEBRIS_COUNT_FULL = 1300
-const DEBRIS_COUNT_LITE = 180
+const DEBRIS_COUNT_FULL = 2000
+const DEBRIS_COUNT_LITE = 220
+// Плоские обломки панелей и изоляции — вторая форма роя.
+const DEBRIS_PLATES_FULL = 1100
+const DEBRIS_PLATES_LITE = 110
 
 // Разворот сферы Земли: у THREE.SphereGeometry с u=0 экватор смотрит на -X,
 // а точка, обращённая к камере (+Z), соответствует u≈0.25 текстуры — это
@@ -33,6 +37,91 @@ function Clouds({ segments }: { segments: number }) {
   )
 }
 
+// Города проекта. Метки живут внутри меша Земли, поэтому уезжают вместе с
+// её вращением и прячутся за горизонт, как настоящая точка на поверхности.
+const CITIES = [
+  { name: "Москва", lat: 55.75, lon: 37.62 },
+  { name: "Санкт-Петербург", lat: 59.94, lon: 30.31 },
+]
+
+/** Широта/долгота → точка на сфере в системе координат THREE.SphereGeometry. */
+function latLonToVec(lat: number, lon: number, r: number) {
+  const phi = ((lon + 180) * Math.PI) / 180
+  const theta = ((90 - lat) * Math.PI) / 180
+  return new THREE.Vector3(
+    -r * Math.cos(phi) * Math.sin(theta),
+    r * Math.cos(theta),
+    r * Math.sin(phi) * Math.sin(theta)
+  )
+}
+
+function CityMarker({ name, lat, lon }: { name: string; lat: number; lon: number }) {
+  const groupRef = useRef<THREE.Group>(null)
+  const labelRef = useRef<HTMLDivElement>(null)
+  const worldPos = useMemo(() => new THREE.Vector3(), [])
+
+  const { position, quaternion } = useMemo(() => {
+    const dir = latLonToVec(lat, lon, 1)
+    const q = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir)
+    return { position: dir.clone().multiplyScalar(1.001), quaternion: q }
+  }, [lat, lon])
+
+  useFrame(({ camera }) => {
+    const g = groupRef.current
+    if (!g) return
+    g.getWorldPosition(worldPos)
+    // Центр планеты в мировых координатах — начало координат, поэтому нормаль
+    // поверхности в точке метки это сама её позиция.
+    const facing = worldPos.clone().normalize().dot(camera.position.clone().sub(worldPos).normalize())
+    // Гасим метку, пока она уходит за лимб, а не выключаем скачком.
+    const visible = Math.max(0, Math.min(1, (facing - 0.05) / 0.3))
+    g.visible = visible > 0.01
+    if (labelRef.current) labelRef.current.style.opacity = String(visible)
+  })
+
+  return (
+    <group ref={groupRef} position={position} quaternion={quaternion}>
+      <mesh position={[0, 0.004, 0]}>
+        <sphereGeometry args={[0.0045, 10, 10]} />
+        <meshBasicMaterial color="#f0c860" toneMapped={false} />
+      </mesh>
+      {/* Тонкий штырёк вверх — метку видно даже поверх светлой поверхности. */}
+      <mesh position={[0, 0.021, 0]}>
+        <cylinderGeometry args={[0.0007, 0.0007, 0.034, 5]} />
+        <meshBasicMaterial color="#f0c860" transparent opacity={0.55} toneMapped={false} />
+      </mesh>
+      <Html position={[0, 0.05, 0]} center distanceFactor={1.5} zIndexRange={[2, 0]}>
+        <div
+          ref={labelRef}
+          style={{
+            fontFamily: "var(--font-body), system-ui, sans-serif",
+            fontSize: 11,
+            letterSpacing: "0.14em",
+            textTransform: "uppercase",
+            color: "#f0c860",
+            whiteSpace: "nowrap",
+            textShadow: "0 1px 6px rgba(0,0,0,0.9)",
+            pointerEvents: "none",
+            userSelect: "none",
+          }}
+        >
+          {name}
+        </div>
+      </Html>
+    </group>
+  )
+}
+
+function CityMarkers() {
+  return (
+    <>
+      {CITIES.map(c => (
+        <CityMarker key={c.name} {...c} />
+      ))}
+    </>
+  )
+}
+
 function EarthCore({ spin }: { spin: { current: number } }) {
   const dayMap = useLoader(THREE.TextureLoader, "/textures/earth-daymap.jpg")
   dayMap.colorSpace = THREE.SRGBColorSpace
@@ -57,6 +146,7 @@ function EarthCore({ spin }: { spin: { current: number } }) {
       <mesh ref={earthRef} rotation={[0, EARTH_INITIAL_YAW, 0]}>
         <sphereGeometry args={[1, segments, segments]} />
         <meshStandardMaterial map={dayMap} roughness={0.75} metalness={0.05} />
+        <CityMarkers />
       </mesh>
       <Clouds segments={segments} />
     </>
@@ -233,16 +323,24 @@ function Atmosphere({ progress, lite }: { progress: DescentProgress; lite: boole
   )
 }
 
-function Debris({
+/**
+ * Один рой обломков одной формы. Форм две, потому что настоящий орбитальный
+ * мусор — это не только куски корпуса: половина каталога это обрывки панелей,
+ * экранно-вакуумной изоляции и обтекателей, то есть плоские пластины. Один
+ * многогранник на всё поле читался как «полигональные камушки».
+ */
+function DebrisSwarm({
   progress,
-  lite,
+  count,
+  flat,
 }: {
   progress: DescentProgress
-  lite: boolean
+  count: number
+  /** Плоские обломки панелей вместо компактных кусков. */
+  flat: boolean
 }) {
   const ref = useRef<THREE.InstancedMesh>(null)
   const dummy = useMemo(() => new THREE.Object3D(), [])
-  const count = lite ? DEBRIS_COUNT_LITE : DEBRIS_COUNT_FULL
 
   const seeds = useMemo(() => {
     return Array.from({ length: count }, () => {
@@ -278,10 +376,13 @@ function Debris({
         driftSpeed: 0.032 / Math.pow(radius, 1.5),
         phi,
         tumble: Math.random() * Math.PI * 2,
+        tumbleY: Math.random() * Math.PI * 2,
+        tumbleZ: Math.random() * Math.PI * 2,
         // Размер подобран под БЛИЗКУЮ камеру: крупный обломок занимает
-        // 6-8 экранных точек, мелкий 2-3. Прежние значения были рассчитаны
-        // на камеру вчетверо дальше и вблизи превращали крошку в астероиды.
-        scale: 0.0016 + Math.pow(Math.random(), 2.1) * 0.005,
+        // 6-8 экранных точек, мелкий едва различимую точку. Показатель 2.9
+        // сильнее прежнего смещает разброс к мелочи — крупных кусков в
+        // каталоге единицы, крошки сотни тысяч.
+        scale: 0.0009 + Math.pow(Math.random(), 2.9) * 0.0052,
       }
     })
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -303,8 +404,15 @@ function Debris({
       const y = r * Math.cos(s.phi) - p * 0.55
       const z = r * Math.sin(s.phi) * Math.sin(theta)
       dummy.position.set(x, y, z)
-      dummy.rotation.set(s.tumble + p * 3, s.tumble * 0.7, 0)
-      dummy.scale.setScalar(s.scale)
+      dummy.rotation.set(s.tumble + p * 3, s.tumbleY + s.drift * 0.6, s.tumbleZ)
+      if (flat) {
+        // Пластина: длинная, широкая, почти без толщины. Кувыркаясь, она то
+        // ловит блик всей плоскостью, то пропадает в ребро — этого мерцания
+        // у одинаковых многогранников не было.
+        dummy.scale.set(s.scale * 2.1, s.scale * 0.16, s.scale * 1.25)
+      } else {
+        dummy.scale.setScalar(s.scale)
+      }
       dummy.updateMatrix()
       ref.current!.setMatrixAt(i, dummy.matrix)
     })
@@ -312,14 +420,35 @@ function Debris({
   })
 
   return (
-    <instancedMesh key={count} ref={ref} args={[undefined, undefined, count]}>
-      <icosahedronGeometry args={[1, 0]} />
-      <meshStandardMaterial color="#7c858d" roughness={0.6} metalness={0.4} />
+    <instancedMesh key={`${flat}-${count}`} ref={ref} args={[undefined, undefined, count]}>
+      {flat ? <boxGeometry args={[1, 1, 1]} /> : <icosahedronGeometry args={[1, 0]} />}
+      <meshStandardMaterial
+        color={flat ? "#9aa3ab" : "#7c858d"}
+        roughness={flat ? 0.32 : 0.6}
+        metalness={flat ? 0.72 : 0.4}
+      />
     </instancedMesh>
   )
 }
 
-const SATELLITE_COUNT = 10
+function Debris({ progress, lite }: { progress: DescentProgress; lite: boolean }) {
+  return (
+    <>
+      <DebrisSwarm
+        progress={progress}
+        count={lite ? DEBRIS_COUNT_LITE : DEBRIS_COUNT_FULL}
+        flat={false}
+      />
+      <DebrisSwarm
+        progress={progress}
+        count={lite ? DEBRIS_PLATES_LITE : DEBRIS_PLATES_FULL}
+        flat
+      />
+    </>
+  )
+}
+
+const SATELLITE_COUNT = 26
 
 function Satellites({ progress }: { progress: DescentProgress }) {
   const groupRefs = useRef<(THREE.Group | null)[]>([])
