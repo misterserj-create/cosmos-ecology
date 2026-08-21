@@ -5,6 +5,7 @@ import CosmicDescent from "@/components/scenes/CosmicDescent"
 import Reveal from "@/components/Reveal"
 import DiveButton from "@/components/DiveButton"
 import StatTile from "@/components/StatTile"
+import { VENUES } from "@/lib/site"
 
 export const dynamic = 'force-dynamic'
 
@@ -109,12 +110,7 @@ export default async function Home() {
             <div className="section-label" style={{ marginBottom: 8 }}>Площадки</div>
             <div className="fade-line" style={{ marginBottom: 48 }} />
             <Reveal className="grid-venues" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 2 }}>
-              {[
-                { name: "Галерея «Печатники»", dates: "6 марта — 19 апреля", address: "Москва, ул. Батюнинская, 14" },
-                { name: "Музей «Спутник»", dates: "15 марта — 15 июня", address: "Москва, 2-я Рыбинская, 21, стр. 1" },
-                { name: "Галерея «ART SPACE»", dates: "10 — 19 апреля", address: "Москва, Тверская, 9" },
-                { name: "Офицерский клуб ВКС", dates: "10 — 19 апреля", address: "Москва, Павловская ул., 8" },
-              ].map(v => (
+              {VENUES.map(v => (
                 <div key={v.name} className="reveal-item" style={{ background: "#0d0d0d", border: "1px solid #1a1a1a", padding: "48px 40px", transition: "border-color 0.3s" }}>
                   <div style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: "1.75rem", marginBottom: 16 }}>{v.name}</div>
                   <div style={{ color: "#c9a84c", fontSize: "1.15rem", marginBottom: 8 }}>{v.dates}</div>
