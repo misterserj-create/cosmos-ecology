@@ -13,7 +13,8 @@
       "team": "Équipe",
       "partners": "Partenaires",
       "events": "Actualités",
-      "history": "Histoire"
+      "history": "Histoire",
+      "journal": "Journal"
     },
     "language": "Langue",
     "menu": "Menu"
@@ -195,6 +196,17 @@
   "events": {
     "label": "Événements et actualités",
     "more": "En savoir plus →"
+  },
+  "journal": {
+    "label": "Journal",
+    "all": "Toutes les publications",
+    "title": "Journal",
+    "description": "Publications du projet Écologie du Cosmos : l'atelier, le montage de l'exposition, des entretiens, des nouvelles de l'orbite.",
+    "empty": "Pas encore de publications",
+    "back": "← Toutes les publications",
+    "gallery": "Photos",
+    "video": "Vidéo",
+    "sources": "Sources"
   },
   "history": {
     "label": "Histoire du projet",

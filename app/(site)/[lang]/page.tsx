@@ -1,13 +1,15 @@
 import { notFound } from "next/navigation"
-import { fetchArtworks, fetchEvents } from "@/lib/content"
+import { fetchArtworks, fetchEvents, fetchJournal } from "@/lib/content"
 import Nav from "@/components/Nav"
+import SiteFooter from "@/components/SiteFooter"
+import JournalCard from "@/components/JournalCard"
 import Gallery from "@/components/Gallery"
 import CosmicDescent from "@/components/scenes/CosmicDescent"
 import Reveal from "@/components/Reveal"
 import DiveButton from "@/components/DiveButton"
 import StatTile from "@/components/StatTile"
 import { TELEMETRY, VENUES } from "@/lib/site"
-import { intlLocale, isLocale } from "@/i18n/config"
+import { intlLocale, isLocale, localePath } from "@/i18n/config"
 import { getDictionary } from "./dictionaries"
 
 export const dynamic = 'force-dynamic'
@@ -18,10 +20,11 @@ export default async function Home({ params }: { params: Promise<{ lang: string 
 
   // Язык уходит в выборку: свободные тексты работ и событий приходят из базы
   // уже переведёнными, а перечисления - по словарю в lib/site.ts.
-  const [dict, artworks, events] = await Promise.all([
+  const [dict, artworks, events, journal] = await Promise.all([
     getDictionary(lang),
     fetchArtworks(lang),
     fetchEvents(lang),
+    fetchJournal(lang, 3),
   ])
   const catalog = artworks.filter(a => a.inCatalog && a.imageUrl)
   const statLabels = dict.stat
@@ -268,27 +271,29 @@ export default async function Home({ params }: { params: Promise<{ lang: string 
         </div>
       </section>
 
-      {/* ── FOOTER ── */}
-      <footer style={{ borderTop: "1px solid #1a1a1a", padding: "32px 24px" }}>
-        <div style={{ maxWidth: 1200, margin: "0 auto", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 16 }}>
-          <span style={{ fontFamily: "var(--font-display)", color: "#c9a84c", fontSize: "0.9rem" }}>{dict.footer.brand}</span>
-          <div style={{ display: "flex", alignItems: "center", gap: 20, flexWrap: "wrap" }}>
-            <span style={{ color: "#5a5a5a", fontSize: "0.75rem" }}>{dict.footer.cities}</span>
-            <span style={{ display: "flex", alignItems: "center", gap: 10, fontSize: "0.75rem" }}>
-              <a href="https://xn--80afpgcdklbdb8ac0nmb.xn--p1ai" style={{ color: "#8a8a8a", textDecoration: "none" }}>
-                экологиякосмоса.рф
+      {/* ── ЖУРНАЛ ── */}
+      {/* Три последние публикации. Раздел без публикаций не показываем -
+          по той же причине, что и события. */}
+      {journal.length > 0 && (
+        <section id="journal" className="grain" style={{ padding: "80px 24px", borderTop: "1px solid #111", position: "relative", background: "var(--earth-bg)" }}>
+          <div style={{ maxWidth: 1200, margin: "0 auto" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 24, flexWrap: "wrap", marginBottom: 8 }}>
+              <div className="section-label">{dict.journal.label}</div>
+              <a href={localePath(lang, "/journal")} style={{ color: "#c9a84c", fontSize: "0.75rem", letterSpacing: "0.2em", textTransform: "uppercase", textDecoration: "none", borderBottom: "1px solid #c9a84c44" }}>
+                {dict.journal.all} →
               </a>
-              <span style={{ color: "#3a3a3a" }}>·</span>
-              <a href="https://cosmosecology.ru" style={{ color: "#8a8a8a", textDecoration: "none" }}>
-                cosmosecology.ru
-              </a>
-            </span>
-            <a href="https://notevibe.ru" target="_blank" rel="noopener" style={{ color: "#333", fontSize: "0.75rem", textDecoration: "none" }}>
-              {dict.footer.credit}
-            </a>
+            </div>
+            <div className="fade-line" style={{ marginBottom: 48 }} />
+            <Reveal className="grid-journal" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(340px, 1fr))", gap: 2 }}>
+              {journal.map(post => (
+                <JournalCard key={post.id} post={post} locale={lang} />
+              ))}
+            </Reveal>
           </div>
-        </div>
-      </footer>
+        </section>
+      )}
+
+      <SiteFooter dict={dict.footer} />
 
     </>
   )

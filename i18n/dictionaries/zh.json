@@ -13,7 +13,8 @@
       "team": "团队",
       "partners": "合作伙伴",
       "events": "活动",
-      "history": "历程"
+      "history": "历程",
+      "journal": "期刊"
     },
     "language": "语言",
     "menu": "菜单"
@@ -195,6 +196,17 @@
   "events": {
     "label": "活动与新闻",
     "more": "了解详情 →"
+  },
+  "journal": {
+    "label": "期刊",
+    "all": "全部文章",
+    "title": "期刊",
+    "description": "“宇宙生态”项目的文章：工作室、展览布展、访谈、轨道新闻。",
+    "empty": "暂无文章",
+    "back": "← 全部文章",
+    "gallery": "照片",
+    "video": "视频",
+    "sources": "来源"
   },
   "history": {
     "label": "项目历程",

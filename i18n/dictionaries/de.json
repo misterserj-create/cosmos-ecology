@@ -13,7 +13,8 @@
       "team": "Team",
       "partners": "Partner",
       "events": "Termine",
-      "history": "Chronik"
+      "history": "Chronik",
+      "journal": "Journal"
     },
     "language": "Sprache",
     "menu": "Menü"
@@ -195,6 +196,17 @@
   "events": {
     "label": "Veranstaltungen und Neuigkeiten",
     "more": "Mehr erfahren →"
+  },
+  "journal": {
+    "label": "Journal",
+    "all": "Alle Beiträge",
+    "title": "Journal",
+    "description": "Beiträge des Projekts Ökologie des Kosmos: Atelier, Ausstellungsaufbau, Interviews, Nachrichten aus dem Orbit.",
+    "empty": "Noch keine Beiträge",
+    "back": "← Alle Beiträge",
+    "gallery": "Fotos",
+    "video": "Video",
+    "sources": "Quellen"
   },
   "history": {
     "label": "Geschichte des Projekts",

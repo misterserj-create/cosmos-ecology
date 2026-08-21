@@ -161,3 +161,31 @@ body {
 @media (max-width: 900px) {
   .hero-scrim { opacity: 1; }
 }
+
+/* ── Журнал ── */
+.journal-card { transition: border-color 0.3s; }
+.journal-card:hover { border-color: #4a3d18 !important; }
+
+/* В ленте показываем не больше четырёх строк анонса: карточки в ряду
+   остаются одной высоты и без лишнего чтения. */
+.journal-excerpt {
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Текст публикации: колонка 720px, кегль и межстрочный как у «О проекте». */
+.journal-body p {
+  font-size: 1.1rem;
+  line-height: 1.8;
+  color: #999;
+  margin-bottom: 24px;
+}
+.journal-body p.journal-lead { color: #ddd; }
+.journal-body a { color: #c9a84c; text-decoration: none; border-bottom: 1px solid #4a3d18; }
+
+@media (max-width: 768px) {
+  .grid-journal { grid-template-columns: 1fr !important; }
+  .grid-journal-gallery { grid-template-columns: 1fr 1fr !important; }
+}

@@ -13,7 +13,8 @@
       "team": "Team",
       "partners": "Partners",
       "events": "Events",
-      "history": "History"
+      "history": "History",
+      "journal": "Journal"
     },
     "language": "Language",
     "menu": "Menu"
@@ -195,6 +196,17 @@
   "events": {
     "label": "Events and news",
     "more": "Read more →"
+  },
+  "journal": {
+    "label": "Journal",
+    "all": "All posts",
+    "title": "Journal",
+    "description": "Posts from the Cosmos Ecology project: the studio, exhibition installation, interviews, news from orbit.",
+    "empty": "No posts yet",
+    "back": "← All posts",
+    "gallery": "Photos",
+    "video": "Video",
+    "sources": "Sources"
   },
   "history": {
     "label": "Project history",

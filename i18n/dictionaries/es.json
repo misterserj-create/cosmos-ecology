@@ -13,7 +13,8 @@
       "team": "Equipo",
       "partners": "Socios",
       "events": "Eventos",
-      "history": "Historia"
+      "history": "Historia",
+      "journal": "Diario"
     },
     "language": "Idioma",
     "menu": "Menú"
@@ -195,6 +196,17 @@
   "events": {
     "label": "Actos y noticias",
     "more": "Más información →"
+  },
+  "journal": {
+    "label": "Diario",
+    "all": "Todas las publicaciones",
+    "title": "Diario",
+    "description": "Publicaciones del proyecto Ecología del Cosmos: el taller, el montaje de la exposición, entrevistas, noticias de la órbita.",
+    "empty": "Aún no hay publicaciones",
+    "back": "← Todas las publicaciones",
+    "gallery": "Fotos",
+    "video": "Vídeo",
+    "sources": "Fuentes"
   },
   "history": {
     "label": "Historia del proyecto",

@@ -7,30 +7,44 @@ type NavDict = Dictionary["nav"]
 
 // Раздел событий на странице показывается только когда события есть.
 // Пункт меню, ведущий в никуда, - верный признак брошенного сайта.
+//
+// Якорные пункты ведут на главную с якорем («/#venues», «/en#about»): так
+// меню одинаково работает и на самой главной, и на страницах журнала.
+// langPaths - адреса текущей страницы на других языках; без них
+// переключатель ведёт на главную соответствующего языка.
 export default function Nav({
   dict,
   locale,
   hasEvents = true,
+  langPaths,
+  solid = false,
 }: {
   dict: NavDict
   locale: Locale
   hasEvents?: boolean
+  langPaths?: Partial<Record<Locale, string>>
+  /** Тёмная подложка с самого верха: для страниц со светлой обложкой под шапкой. */
+  solid?: boolean
 }) {
   const [scrolled, setScrolled] = useState(false)
   const [open, setOpen] = useState(false)
   const [langOpen, setLangOpen] = useState(false)
   const langRef = useRef<HTMLDivElement>(null)
 
+  const home = localePath(locale) === "/" ? "" : localePath(locale)
+  const anchor = (id: string) => `${home}/#${id}`
   const allLinks = [
-    { href: "#venues", label: dict.links.venues },
-    { href: "#about", label: dict.links.about },
-    { href: "#gallery", label: dict.links.gallery },
-    { href: "#team", label: dict.links.team },
-    { href: "#partners", label: dict.links.partners },
-    { href: "#events", label: dict.links.events },
-    { href: "#history", label: dict.links.history },
+    { href: anchor("venues"), label: dict.links.venues, id: "venues" },
+    { href: anchor("about"), label: dict.links.about, id: "about" },
+    { href: anchor("gallery"), label: dict.links.gallery, id: "gallery" },
+    { href: anchor("team"), label: dict.links.team, id: "team" },
+    { href: anchor("partners"), label: dict.links.partners, id: "partners" },
+    { href: anchor("events"), label: dict.links.events, id: "events" },
+    { href: anchor("history"), label: dict.links.history, id: "history" },
+    { href: localePath(locale, "/journal"), label: dict.links.journal, id: "journal" },
   ]
-  const links = hasEvents ? allLinks : allLinks.filter(l => l.href !== "#events")
+  const links = hasEvents ? allLinks : allLinks.filter(l => l.id !== "events")
+  const langHref = (l: Locale) => langPaths?.[l] || localePath(l)
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 40)
@@ -65,8 +79,8 @@ export default function Nav({
         right: 0,
         zIndex: 100,
         transition: "background 0.3s",
-        background: scrolled ? "rgba(8,8,8,0.95)" : "transparent",
-        backdropFilter: scrolled ? "blur(12px)" : "none",
+        background: scrolled ? "rgba(8,8,8,0.95)" : solid ? "rgba(8,8,8,0.8)" : "transparent",
+        backdropFilter: scrolled || solid ? "blur(12px)" : "none",
         borderBottom: scrolled ? "1px solid rgba(201,168,76,0.15)" : "none",
       }}
     >
@@ -129,7 +143,7 @@ export default function Nav({
                 {locales.map(l => (
                   <a
                     key={l}
-                    href={localePath(l)}
+                    href={langHref(l)}
                     hrefLang={l}
                     style={{
                       display: "flex",
@@ -182,7 +196,7 @@ export default function Nav({
               {locales.map(l => (
                 <a
                   key={l}
-                  href={localePath(l)}
+                  href={langHref(l)}
                   hrefLang={l}
                   style={{
                     padding: "6px 12px",

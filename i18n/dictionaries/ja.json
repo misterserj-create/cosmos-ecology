@@ -13,7 +13,8 @@
       "team": "メンバー",
       "partners": "パートナー",
       "events": "イベント",
-      "history": "歩み"
+      "history": "歩み",
+      "journal": "ジャーナル"
     },
     "language": "言語",
     "menu": "メニュー"
@@ -195,6 +196,17 @@
   "events": {
     "label": "イベントとニュース",
     "more": "詳しく →"
+  },
+  "journal": {
+    "label": "ジャーナル",
+    "all": "すべての記事",
+    "title": "ジャーナル",
+    "description": "「宇宙のエコロジー」プロジェクトの記事：アトリエ、展示の設営、インタビュー、軌道のニュース。",
+    "empty": "まだ記事はありません",
+    "back": "← すべての記事",
+    "gallery": "写真",
+    "video": "動画",
+    "sources": "出典"
   },
   "history": {
     "label": "プロジェクトの歩み",
