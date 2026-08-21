@@ -4,10 +4,10 @@ import { useMemo, useRef } from "react"
 import { Canvas, useFrame, useLoader } from "@react-three/fiber"
 import * as THREE from "three"
 
-const DEBRIS_COUNT_FULL = 2000
+const DEBRIS_COUNT_FULL = 3400
 const DEBRIS_COUNT_LITE = 220
 // Плоские обломки панелей и изоляции — вторая форма роя.
-const DEBRIS_PLATES_FULL = 1100
+const DEBRIS_PLATES_FULL = 1800
 const DEBRIS_PLATES_LITE = 110
 
 // Разворот сферы Земли: у THREE.SphereGeometry с u=0 экватор смотрит на -X,
@@ -361,7 +361,7 @@ function DebrisSwarm({
         // с планетой. Реальный НОО-мусор облетает Землю за ~90 минут, Земля
         // вращается за сутки — они физически НЕ должны двигаться синхронно,
         // именно разница в скорости и читается как "это орбита", а не сцепка.
-        driftSpeed: 0.032 / Math.pow(radius, 1.5),
+        driftSpeed: 0.085 / Math.pow(radius, 1.5),
         phi,
         tumble: Math.random() * Math.PI * 2,
         tumbleY: Math.random() * Math.PI * 2,
@@ -436,6 +436,86 @@ function Debris({ progress, lite }: { progress: DescentProgress; lite: boolean }
   )
 }
 
+const HAZARD_COUNT = 22
+
+/**
+ * Опасные сближения: осколки, проносящиеся сквозь пояс спутников.
+ *
+ * Весь остальной рой движется медленно и читается как облако. Настоящая
+ * опасность на орбите - это не плотность, а скорость встречи: два объекта
+ * идут по разным наклонениям и расходятся на встречных курсах со скоростью
+ * порядка 10-15 км/с. Поэтому эти осколки живут по своим правилам: орбита
+ * круче наклонена, угловая скорость на порядок выше, а сам осколок вытянут
+ * вдоль направления движения - глаз читает такую полосу как след, а не как
+ * камушек.
+ *
+ * На кадры это не влияет: скорость вращения ничего не стоит, платится только
+ * за количество объектов.
+ */
+function Hazards({ progress }: { progress: DescentProgress }) {
+  const ref = useRef<THREE.InstancedMesh>(null)
+  const dummy = useMemo(() => new THREE.Object3D(), [])
+  const here = useMemo(() => new THREE.Vector3(), [])
+  const ahead = useMemo(() => new THREE.Vector3(), [])
+
+  const seeds = useMemo(
+    () =>
+      Array.from({ length: HAZARD_COUNT }, () => ({
+        // Тот же слой высот, где идут спутники: пролёт должен быть виден
+        // рядом с ними, а не сам по себе.
+        radius: 1.05 + Math.random() * 0.3,
+        theta: Math.random() * Math.PI * 2,
+        phase: 0,
+        // Круче наклонение и в разы выше скорость - полный оборот за 5-9
+        // секунд против нескольких минут у остального роя.
+        speed: (Math.random() < 0.5 ? -1 : 1) * (0.7 + Math.random() * 0.6),
+        tilt: (Math.random() - 0.5) * 2.4,
+        yaw: Math.random() * Math.PI * 2,
+        length: 0.045 + Math.random() * 0.05,
+      })),
+    []
+  )
+
+  useFrame((_, delta) => {
+    if (!ref.current) return
+    const p = progress.current
+
+    seeds.forEach((s, i) => {
+      s.phase += s.speed * delta
+      const r = s.radius * (1 - p * 0.1)
+      const drop = p * 0.55
+      // Точку берём дважды: сейчас и чуть впереди по курсу. Разница задаёт
+      // направление, вдоль которого осколок вытягивается в след.
+      for (const [t, out] of [[s.phase, here], [s.phase + 0.02, ahead]] as const) {
+        const x = r * Math.cos(t)
+        const z = r * Math.sin(t)
+        // Наклон орбиты: поворот плоскости вокруг оси X, потом вокруг Y.
+        const y1 = z * Math.sin(s.tilt)
+        const z1 = z * Math.cos(s.tilt)
+        out.set(
+          x * Math.cos(s.yaw) + z1 * Math.sin(s.yaw),
+          y1 - drop,
+          -x * Math.sin(s.yaw) + z1 * Math.cos(s.yaw)
+        )
+      }
+      dummy.position.copy(here)
+      dummy.lookAt(ahead)
+      dummy.scale.set(0.0016, 0.0016, s.length)
+      dummy.updateMatrix()
+      ref.current!.setMatrixAt(i, dummy.matrix)
+    })
+    ref.current.instanceMatrix.needsUpdate = true
+  })
+
+  return (
+    <instancedMesh ref={ref} args={[undefined, undefined, HAZARD_COUNT]}>
+      {/* Геометрия вытянута по оси Z: lookAt разворачивает именно её по курсу. */}
+      <boxGeometry args={[1, 1, 1]} />
+      <meshBasicMaterial color="#eaf2ff" toneMapped={false} transparent opacity={0.85} />
+    </instancedMesh>
+  )
+}
+
 const SATELLITE_COUNT = 26
 
 function Satellites({ progress }: { progress: DescentProgress }) {
@@ -453,7 +533,7 @@ function Satellites({ progress }: { progress: DescentProgress }) {
           // Своя орбитальная скорость (кеплеровская, как у роя обломков) —
           // спутники видимо облетают планету, а не крутятся вместе с ней
           // одним жёстким блоком.
-          driftSpeed: 0.03 / Math.pow(radius, 1.5),
+          driftSpeed: 0.075 / Math.pow(radius, 1.5),
           driftPhase: 0,
           tumble: new THREE.Vector3(Math.random() - 0.5, Math.random() - 0.5, Math.random() - 0.5).normalize(),
           tumbleSpeed: 0.15 + Math.random() * 0.25,
@@ -627,6 +707,7 @@ export default function DebrisField({
         <Atmosphere progress={progress} lite={lite} />
         <Debris progress={progress} lite={lite} />
         {!lite && <Satellites progress={progress} />}
+        {!lite && <Hazards progress={progress} />}
       </group>
       {!lite && <Moon />}
       {!lite && <Streaks />}
