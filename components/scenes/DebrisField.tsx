@@ -4,6 +4,9 @@ import { useMemo, useRef } from "react"
 import { Canvas, useFrame, useLoader } from "@react-three/fiber"
 import { Html } from "@react-three/drei"
 import * as THREE from "three"
+import { SCENE_CITIES } from "@/lib/site"
+
+type CityId = (typeof SCENE_CITIES)[number]["id"]
 
 const DEBRIS_COUNT_FULL = 2000
 const DEBRIS_COUNT_LITE = 220
@@ -39,10 +42,8 @@ function Clouds({ segments }: { segments: number }) {
 
 // Города проекта. Метки живут внутри меша Земли, поэтому уезжают вместе с
 // её вращением и прячутся за горизонт, как настоящая точка на поверхности.
-const CITIES = [
-  { name: "Москва", lat: 55.75, lon: 37.62 },
-  { name: "Санкт-Петербург", lat: 59.94, lon: 30.31 },
-]
+// Координаты - в lib/site.ts, подписи приходят из словаря.
+export type CityLabels = Record<CityId, string>
 
 /** Широта/долгота → точка на сфере в системе координат THREE.SphereGeometry. */
 function latLonToVec(lat: number, lon: number, r: number) {
@@ -112,17 +113,17 @@ function CityMarker({ name, lat, lon }: { name: string; lat: number; lon: number
   )
 }
 
-function CityMarkers() {
+function CityMarkers({ labels }: { labels: CityLabels }) {
   return (
     <>
-      {CITIES.map(c => (
-        <CityMarker key={c.name} {...c} />
+      {SCENE_CITIES.map(c => (
+        <CityMarker key={c.id} name={labels[c.id]} lat={c.lat} lon={c.lon} />
       ))}
     </>
   )
 }
 
-function EarthCore({ spin }: { spin: { current: number } }) {
+function EarthCore({ spin, cityLabels }: { spin: { current: number }; cityLabels: CityLabels }) {
   const dayMap = useLoader(THREE.TextureLoader, "/textures/earth-daymap.jpg")
   dayMap.colorSpace = THREE.SRGBColorSpace
 
@@ -146,7 +147,7 @@ function EarthCore({ spin }: { spin: { current: number } }) {
       <mesh ref={earthRef} rotation={[0, EARTH_INITIAL_YAW, 0]}>
         <sphereGeometry args={[1, segments, segments]} />
         <meshStandardMaterial map={dayMap} roughness={0.75} metalness={0.05} />
-        <CityMarkers />
+        <CityMarkers labels={cityLabels} />
       </mesh>
       <Clouds segments={segments} />
     </>
@@ -573,10 +574,13 @@ function Rig({ progress }: { progress: DescentProgress }) {
 
 export default function DebrisField({
   progress,
+  cityLabels,
   lite = false,
   onContextLost,
 }: {
   progress: DescentProgress
+  /** Подписи Москвы и Петербурга на языке страницы. */
+  cityLabels: CityLabels
   /** Урезанная версия для тач-устройств: меньше частиц, без Луны/спутников/
    *  пролётов/облаков — стабильность на слабых мобильных GPU важнее полноты. */
   lite?: boolean
@@ -613,7 +617,7 @@ export default function DebrisField({
           и видимая разница в скорости читается как "это орбита", а не
           жёсткая сцепка с планетой. */}
       <group rotation={[0, 0, 0.41]}>
-        {lite ? <EarthLite spin={spin} /> : <EarthCore spin={spin} />}
+        {lite ? <EarthLite spin={spin} /> : <EarthCore spin={spin} cityLabels={cityLabels} />}
         <Atmosphere progress={progress} lite={lite} />
         <Debris progress={progress} lite={lite} />
         {!lite && <Satellites progress={progress} />}

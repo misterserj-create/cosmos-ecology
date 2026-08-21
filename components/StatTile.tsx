@@ -7,10 +7,24 @@ type Kind = "count" | "millions" | "static"
 
 /** Функции нельзя передавать из серверного компонента в клиентский как пропсы
  *  (RSC serialization) — поэтому формат числа задаётся строковым видом kind,
- *  а не функцией, и форматирование живёт внутри самого компонента. */
-function formatValue(kind: Kind, n: number, suffix?: string): string {
-  if (kind === "millions") return (n / 1e6).toFixed(1).replace(".", ",") + " млн"
-  return Math.round(n).toLocaleString("ru-RU") + (suffix ?? "")
+ *  а не функцией, и форматирование живёт внутри самого компонента.
+ *  Разделитель разрядов и дробная часть берутся из локали: 46 250 по-русски,
+ *  46,250 по-английски. Слово "млн" приходит из словаря. */
+function formatValue(
+  kind: Kind,
+  n: number,
+  intlLocale: string,
+  millionsWord: string,
+  suffix?: string
+): string {
+  if (kind === "millions") {
+    const value = new Intl.NumberFormat(intlLocale, {
+      minimumFractionDigits: 1,
+      maximumFractionDigits: 1,
+    }).format(n / 1e6)
+    return `${value} ${millionsWord}`
+  }
+  return new Intl.NumberFormat(intlLocale).format(Math.round(n)) + (suffix ?? "")
 }
 
 /**
@@ -30,6 +44,8 @@ export default function StatTile({
   asOf,
   comparisons = [],
   trend,
+  intlLocale,
+  labels,
 }: {
   target?: number
   kind?: Kind
@@ -43,6 +59,10 @@ export default function StatTile({
   /** Короткая подпись роста — реальное "было" из более старого источника,
    *  не выдуманный секундный прирост. Например: "было ~9 000 т в 2022 (NASA)". */
   trend?: string
+  /** Локаль для Intl: "ru-RU", "ja-JP" и так далее. */
+  intlLocale: string
+  /** Служебные подписи карточки из словаря. */
+  labels: { sourceButton: string; asOfPrefix: string; sourceLink: string; millions: string }
 }) {
   const ref = useRef<HTMLDivElement>(null)
   const [display, setDisplay] = useState("0")
@@ -57,7 +77,8 @@ export default function StatTile({
 
     const settle = () => {
       if (staticValue !== undefined) setDisplay(staticValue)
-      else if (target !== undefined) setDisplay(formatValue(kind, target, suffix))
+      else if (target !== undefined)
+        setDisplay(formatValue(kind, target, intlLocale, labels.millions, suffix))
       setSettled(true)
     }
 
@@ -83,7 +104,8 @@ export default function StatTile({
             n: target,
             duration: 1.6,
             ease: "power2.out",
-            onUpdate: () => setDisplay(formatValue(kind, counter.n, suffix)),
+            onUpdate: () =>
+              setDisplay(formatValue(kind, counter.n, intlLocale, labels.millions, suffix)),
             onComplete: () => setSettled(true),
           })
         }
@@ -105,7 +127,7 @@ export default function StatTile({
     >
       <button
         onClick={() => setShowSource(s => !s)}
-        aria-label="Источник данных"
+        aria-label={labels.sourceButton}
         style={{
           position: "absolute",
           top: 10,
@@ -171,9 +193,9 @@ export default function StatTile({
           }}
         >
           <div style={{ color: "#c9a84c", marginBottom: 4 }}>{source}</div>
-          <div style={{ marginBottom: 6 }}>по данным на {asOf}</div>
+          <div style={{ marginBottom: 6 }}>{labels.asOfPrefix} {asOf}</div>
           <a href={sourceUrl} target="_blank" rel="noopener noreferrer" style={{ color: "#8fa7bf" }}>
-            первоисточник →
+            {labels.sourceLink}
           </a>
         </div>
       )}

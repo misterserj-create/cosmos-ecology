@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react"
 import dynamic from "next/dynamic"
 import gsap from "gsap"
 import { ScrollTrigger } from "gsap/ScrollTrigger"
-import type { DescentProgress } from "./DebrisField"
+import type { CityLabels, DescentProgress } from "./DebrisField"
 
 const DebrisField = dynamic(() => import("./DebrisField"), { ssr: false })
 
@@ -19,7 +19,14 @@ if (typeof window !== "undefined") {
  * Отключается по prefers-reduced-motion и на узких экранах — остаётся
  * только статичный радиальный градиент, который уже был в Hero.
  */
-export default function CosmicDescent({ children }: { children: React.ReactNode }) {
+export default function CosmicDescent({
+  children,
+  cityLabels,
+}: {
+  children: React.ReactNode
+  /** Подписи городов на глобусе - единственный текст внутри сцены. */
+  cityLabels: CityLabels
+}) {
   const wrapperRef = useRef<HTMLDivElement>(null)
   const washRef = useRef<HTMLDivElement>(null)
   const scrimRef = useRef<HTMLDivElement>(null)
@@ -127,6 +134,7 @@ export default function CosmicDescent({ children }: { children: React.ReactNode 
             <DebrisField
               key={sceneKey}
               progress={progress.current}
+              cityLabels={cityLabels}
               lite={lite}
               onContextLost={handleContextLost}
             />

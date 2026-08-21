@@ -11,7 +11,7 @@ if (typeof window !== "undefined") gsap.registerPlugin(ScrollToPlugin)
  * максимального приближения к Земле внутри CosmicDescent — не отдельный
  * экран/состояние, а управляемый прыжок по той же самой шкале прогресса.
  */
-export default function DiveButton() {
+export default function DiveButton({ label }: { label: string }) {
   const [hover, setHover] = useState(false)
 
   function handleClick() {
@@ -52,7 +52,7 @@ export default function DiveButton() {
         gap: 8,
       }}
     >
-      Погрузиться к Земле
+      {label}
       <span style={{ transform: hover ? "translateY(3px)" : "translateY(0)", transition: "transform 0.3s var(--ease-cinematic)" }}>↓</span>
     </button>
   )

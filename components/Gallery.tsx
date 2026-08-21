@@ -4,20 +4,25 @@ import Image from "next/image"
 import gsap from "gsap"
 import { ScrollTrigger } from "gsap/ScrollTrigger"
 import type { Artwork } from "@/lib/airtable"
+import { AUTHOR_FILTERS, type AuthorFilter } from "@/lib/site"
+import type { Dictionary } from "@/app/(site)/[lang]/dictionaries"
 
 if (typeof window !== "undefined") gsap.registerPlugin(ScrollTrigger)
 
-const AUTHORS = ["Все", "Сергей Кожуховский", "Елизавета Козырь", "Татьяна Кокорева"]
+type GalleryDict = Dictionary["gallery"]
 
-export default function Gallery({ artworks }: { artworks: Artwork[] }) {
-  const [filter, setFilter] = useState("Все")
+export default function Gallery({ artworks, dict }: { artworks: Artwork[]; dict: GalleryDict }) {
+  // Фильтруем по ключу, а не по подписи кнопки. Подпись переводится, поле
+  // "автор" в базе - нет, и сравнение переведённой строки с русским полем
+  // на любом языке кроме русского просто ничего не находило бы.
+  const [filterId, setFilterId] = useState<AuthorFilter["id"]>("all")
   const [selected, setSelected] = useState<Artwork | null>(null)
   const gridRef = useRef<HTMLDivElement>(null)
 
-  const filtered = useMemo(
-    () => (filter === "Все" ? artworks : artworks.filter(a => a.author === filter)),
-    [artworks, filter]
-  )
+  const filtered = useMemo(() => {
+    const match = AUTHOR_FILTERS.find(f => f.id === filterId)?.match ?? null
+    return match === null ? artworks : artworks.filter(a => a.author === match)
+  }, [artworks, filterId])
 
   // Акт «Алхимия»: работы проступают из темноты, как под лучом в мастерской —
   // та же логика роя, что несёт камеру в акте 02, здесь складывается в форму.
@@ -71,23 +76,23 @@ export default function Gallery({ artworks }: { artworks: Artwork[] }) {
   return (
     <section id="gallery" className="grain" style={{ padding: "80px 0", position: "relative", background: "var(--earth-bg)" }}>
       <div style={{ maxWidth: 1200, margin: "0 auto", padding: "0 24px" }}>
-        <div className="section-label" style={{ marginBottom: 8 }}>Галерея работ</div>
+        <div className="section-label" style={{ marginBottom: 8 }}>{dict.label}</div>
         <div className="fade-line" style={{ marginBottom: 40 }} />
 
         {/* Filters */}
         <div style={{ display: "flex", gap: 12, marginBottom: 40, flexWrap: "wrap" }}>
-          {AUTHORS.map(a => (
-            <button key={a} onClick={() => setFilter(a)} style={{
+          {AUTHOR_FILTERS.map(f => (
+            <button key={f.id} onClick={() => setFilterId(f.id)} style={{
               padding: "8px 20px",
               fontSize: "0.7rem",
               letterSpacing: "0.2em",
               textTransform: "uppercase",
-              border: `1px solid ${filter === a ? "#c9a84c" : "#333"}`,
-              background: filter === a ? "#c9a84c22" : "transparent",
-              color: filter === a ? "#c9a84c" : "#888",
+              border: `1px solid ${filterId === f.id ? "#c9a84c" : "#333"}`,
+              background: filterId === f.id ? "#c9a84c22" : "transparent",
+              color: filterId === f.id ? "#c9a84c" : "#888",
               cursor: "pointer",
               transition: "all 0.2s",
-            }}>{a}</button>
+            }}>{dict.authors[f.id]}</button>
           ))}
         </div>
 
@@ -120,7 +125,7 @@ export default function Gallery({ artworks }: { artworks: Artwork[] }) {
                   className="art-card-img"
                 />
               ) : (
-                <div style={{ width: "100%", height: "100%", background: "#1a1a1a", display: "flex", alignItems: "center", justifyContent: "center", color: "#444", fontSize: "0.8rem" }}>нет фото</div>
+                <div style={{ width: "100%", height: "100%", background: "#1a1a1a", display: "flex", alignItems: "center", justifyContent: "center", color: "#444", fontSize: "0.8rem" }}>{dict.noPhoto}</div>
               )}
               <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, padding: "40px 16px 16px", background: "linear-gradient(transparent, rgba(0,0,0,0.85))", opacity: 0, transition: "opacity 0.3s" }}
                 onMouseEnter={e => (e.currentTarget.style.opacity = "1")}
@@ -159,9 +164,9 @@ export default function Gallery({ artworks }: { artworks: Artwork[] }) {
               {selected.descShort && <div style={{ fontSize: "0.85rem", lineHeight: 1.6, color: "#ccc", marginTop: 8 }}>{selected.descShort}</div>}
               {selected.curatorText && <div style={{ fontSize: "0.78rem", color: "#888", lineHeight: 1.7, marginTop: 8 }}>{selected.curatorText}</div>}
               <div style={{ marginTop: "auto", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12 }}>
-                <span style={{ fontSize: "0.68rem", color: "#555", letterSpacing: "0.1em" }}>← / → между работами</span>
+                <span style={{ fontSize: "0.68rem", color: "#555", letterSpacing: "0.1em" }}>{dict.arrowsHint}</span>
                 <button onClick={() => setSelected(null)} style={{ padding: "10px 24px", border: "1px solid #333", background: "none", color: "#888", cursor: "pointer", fontSize: "0.7rem", letterSpacing: "0.2em", textTransform: "uppercase" }}>
-                  Закрыть
+                  {dict.close}
                 </button>
               </div>
             </div>
