@@ -31,6 +31,7 @@ export default function ArtworksAdmin() {
         <div style={{ display:'flex', gap:24, alignItems:'center' }}>
           <h1 style={h1}>Работы ({rows.length})</h1>
           <Link href="/admin/events" style={navLink}>→ События</Link>
+          <Link href="/admin/pipeline" style={navLink}>→ Тракт</Link>
         </div>
         <Link href="/admin/artworks/new" style={addBtn}>+ Добавить</Link>
       </div>
