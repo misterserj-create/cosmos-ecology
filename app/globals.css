@@ -143,3 +143,21 @@ body {
     grid-template-columns: 1fr !important;
   }
 }
+
+/* Притемнение низа кадра под текстом первого экрана на узких экранах. */
+.hero-scrim {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0;
+  background: linear-gradient(
+    to bottom,
+    transparent 38%,
+    rgba(8, 8, 8, 0.5) 72%,
+    rgba(8, 8, 8, 0.82) 100%
+  );
+}
+
+@media (max-width: 900px) {
+  .hero-scrim { opacity: 1; }
+}

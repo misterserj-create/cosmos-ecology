@@ -153,10 +153,20 @@ function EarthCore({ spin }: { spin: { current: number } }) {
   )
 }
 
-// Лёгкая версия Земли для мобильных: без текстур вообще (сплошной цвет) —
-// декодирование JPEG-текстуры в GPU-память на слабых Android-GPU было
-// вероятной причиной потери WebGL-контекста на середине сессии.
+// Лёгкая версия Земли для мобильных. Раньше была вообще без текстуры -
+// сплошной синий шар, и на телефоне от сцены не оставалось ничего. Текстуру
+// когда-то убрали, подозревая в ней потерю WebGL-контекста на слабых
+// Android-GPU, но 1024x512 (137 КБ, 2 МБ в памяти GPU) месяцами работала на
+// десктопе без единого срыва - дело было не в ней. Возвращаем именно этот
+// размер, а не общий файл 4096x2048: тот занял бы 32 МБ видеопамяти.
 function EarthLite({ spin }: { spin: { current: number } }) {
+  const dayMap = useLoader(THREE.TextureLoader, "/textures/earth-daymap-1k.jpg")
+  dayMap.colorSpace = THREE.SRGBColorSpace
+  // Без мип-уровней: их построение на слабом GPU это лишняя работа и лишняя
+  // треть памяти, а камера здесь стоит на одном расстоянии.
+  dayMap.generateMipmaps = false
+  dayMap.minFilter = THREE.LinearFilter
+
   const earthRef = useRef<THREE.Mesh>(null)
 
   useFrame((_, delta) => {
@@ -166,8 +176,9 @@ function EarthLite({ spin }: { spin: { current: number } }) {
 
   return (
     <mesh ref={earthRef} rotation={[0, EARTH_INITIAL_YAW, 0]}>
-      <sphereGeometry args={[1, 32, 32]} />
-      <meshStandardMaterial color="#3d5f7a" roughness={0.85} metalness={0} />
+      <sphereGeometry args={[1, 40, 40]} />
+      <meshStandardMaterial map={dayMap} roughness={0.8} metalness={0.03} />
+      <CityMarkers />
     </mesh>
   )
 }
@@ -554,19 +565,41 @@ function Streaks() {
   )
 }
 
-function Rig({ progress }: { progress: DescentProgress }) {
-  const target = useMemo(() => new THREE.Vector3(), [])
+// Направление на камеру: наклон тот же на любом экране, меняется только
+// удаление и наклон взгляда.
+const CAM_DIR = new THREE.Vector3(0.35, 0.62, 1.86).normalize()
+const ORIGIN = new THREE.Vector3(0, 0, 0)
 
-  useFrame(({ camera }) => {
+function Rig({ progress }: { progress: DescentProgress }) {
+  useFrame(({ camera, size }) => {
     const p = progress.current
-    // Камера стоит НА низкой орбите, а не смотрит на глобус издалека. Земля
-    // закрывает нижние две трети кадра и обрезается краями — как на снимках
-    // с орбиты. Именно из-за дальней камеры рой читался как отдельное облако
-    // вокруг шарика: теперь обломки проходят на фоне самой поверхности.
-    camera.position.set(0.35 + p * 0.2, 0.62 - p * 0.32, 1.86 - p * 0.41)
-    // Центр планеты уходит ниже кадра, в кадре остаётся дуга горизонта.
-    target.set(0, 0.88 + p * 0.27, 0)
-    camera.lookAt(target)
+    const cam = camera as THREE.PerspectiveCamera
+
+    // На вертикальном экране телефона горизонтальное поле зрения втрое
+    // уже, чем на десктопе, и та же камера показывает не дугу горизонта, а
+    // сплошную поверхность под самым носом. Поэтому на портретных экранах
+    // камера отходит дальше: планета остаётся крупной, но кривизна и
+    // атмосферная дуга снова попадают в кадр, а сверху остаётся чёрное небо
+    // под заголовок.
+    const aspect = size.width / Math.max(size.height, 1)
+    const portrait = Math.min(Math.max((1.2 - aspect) / 0.7, 0), 1)
+
+    // Камера стоит НА низкой орбите, а не смотрит на глобус издалека: обломки
+    // идут на фоне самой поверхности, а не висят облаком вокруг шарика.
+    const dist = (1.99 - p * 0.42) * (1 + portrait * 0.52)
+    camera.position.copy(CAM_DIR).multiplyScalar(dist)
+
+    // Угловой радиус планеты с этой точки.
+    const earthAngle = Math.asin(Math.min(1 / dist, 1))
+    const halfFovV = ((cam.fov ?? 34) * Math.PI) / 360
+    // Куда поставить верхний край планеты относительно центра кадра: на
+    // широком экране чуть выше центра, на узком чуть ниже - там нужнее небо.
+    const limbAt = halfFovV * (0.25 - portrait * 0.52 + p * 0.1)
+
+    camera.lookAt(ORIGIN)
+    // Задираем взгляд так, чтобы центр планеты ушёл под нижний край кадра
+    // и остался виден только горизонт.
+    camera.rotateX(earthAngle - limbAt)
   })
   return null
 }

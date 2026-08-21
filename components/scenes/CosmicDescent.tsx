@@ -131,6 +131,10 @@ export default function CosmicDescent({ children }: { children: React.ReactNode 
               onContextLost={handleContextLost}
             />
           )}
+          {/* На узком экране планета занимает почти весь кадр, и подзаголовок
+              с кнопкой ложатся на освещённую поверхность. Притемняем низ
+              кадра - только на телефонах, на широком экране низ и так чёрный. */}
+          <div className="hero-scrim" aria-hidden />
           <div
             ref={washRef}
             style={{
