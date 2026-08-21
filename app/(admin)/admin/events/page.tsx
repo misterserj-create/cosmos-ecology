@@ -28,6 +28,7 @@ export default function EventsAdmin() {
         <div style={{ display:'flex', gap:24, alignItems:'center' }}>
           <h1 style={h1}>События ({rows.length})</h1>
           <Link href="/admin/artworks" style={navLink}>→ Работы</Link>
+          <Link href="/admin/journal" style={navLink}>→ Журнал</Link>
         </div>
         <Link href="/admin/events/new" style={addBtn}>+ Добавить</Link>
       </div>

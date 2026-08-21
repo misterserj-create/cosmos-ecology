@@ -3,24 +3,24 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 
 type Row = {
-  id: number; art_id: string; title: string; author: string;
-  thumb_url: string; image_url: string; in_catalog: boolean; category: string
+  id: number; slug: string; title: string; published: boolean;
+  published_at: string | null; cover_url: string; source_tg_id: number | null
 }
 
-export default function ArtworksAdmin() {
+export default function JournalAdmin() {
   const [rows, setRows] = useState<Row[]>([])
 
   async function load() {
-    const r = await fetch('/api/admin/artworks')
+    const r = await fetch('/api/admin/journal')
     setRows(await r.json())
   }
 
   async function toggle(id: number, val: boolean) {
-    await fetch(`/api/admin/artworks/${id}`, {
-      method: 'PATCH', body: JSON.stringify({ in_catalog: val }),
+    await fetch(`/api/admin/journal/${id}`, {
+      method: 'PATCH', body: JSON.stringify({ published: val }),
       headers: { 'Content-Type': 'application/json' },
     })
-    setRows(prev => prev.map(r => r.id === id ? { ...r, in_catalog: val } : r))
+    setRows(prev => prev.map(r => r.id === id ? { ...r, published: val } : r))
   }
 
   useEffect(() => { load() }, [])
@@ -29,18 +29,18 @@ export default function ArtworksAdmin() {
     <div style={page}>
       <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:24 }}>
         <div style={{ display:'flex', gap:24, alignItems:'center' }}>
-          <h1 style={h1}>Работы ({rows.length})</h1>
+          <h1 style={h1}>Журнал ({rows.length})</h1>
+          <Link href="/admin/artworks" style={navLink}>→ Работы</Link>
           <Link href="/admin/events" style={navLink}>→ События</Link>
-          <Link href="/admin/journal" style={navLink}>→ Журнал</Link>
         </div>
-        <Link href="/admin/artworks/new" style={addBtn}>+ Добавить</Link>
+        <Link href="/admin/journal/new" style={addBtn}>+ Добавить</Link>
       </div>
 
       <table style={{ width:'100%', borderCollapse:'collapse' }}>
         <thead>
           <tr style={{ borderBottom:'1px solid #222', textAlign:'left' }}>
-            {['', 'ID', 'Название', 'Автор', 'В галерею', ''].map(h => (
-              <th key={h} style={th}>{h}</th>
+            {['', 'Дата', 'Заголовок', 'Адрес', 'Опубликовано', ''].map((h, i) => (
+              <th key={i} style={th}>{h}</th>
             ))}
           </tr>
         </thead>
@@ -48,23 +48,28 @@ export default function ArtworksAdmin() {
           {rows.map(r => (
             <tr key={r.id} style={{ borderBottom:'1px solid #1a1a1a' }}>
               <td style={td}>
-                {(r.thumb_url || r.image_url) ? (
-                  <img src={r.thumb_url || r.image_url} alt="" style={{ width:56, height:56, objectFit:'cover' }} />
+                {r.cover_url ? (
+                  <img src={r.cover_url} alt="" style={{ width:56, height:56, objectFit:'cover' }} />
                 ) : <div style={{ width:56, height:56, background:'#1a1a1a' }} />}
               </td>
-              <td style={{ ...td, color:'#666', fontSize:'0.8rem' }}>{r.art_id}</td>
-              <td style={td}>{r.title}</td>
-              <td style={{ ...td, color:'#888' }}>{r.author}</td>
+              <td style={{ ...td, color:'#666', fontSize:'0.8rem', whiteSpace:'nowrap' }}>{r.published_at || ''}</td>
+              <td style={td}>
+                {r.title}
+                {r.source_tg_id && <span style={{ color:'#444', fontSize:'0.75rem', marginLeft:8 }}>tg#{r.source_tg_id}</span>}
+              </td>
+              <td style={{ ...td, color:'#888', fontSize:'0.8rem' }}>
+                <a href={`/journal/${r.slug}`} target="_blank" rel="noopener" style={{ color:'#888', textDecoration:'none' }}>/journal/{r.slug}</a>
+              </td>
               <td style={td}>
                 <button
-                  onClick={() => toggle(r.id, !r.in_catalog)}
-                  style={{ ...toggleBtn, background: r.in_catalog ? '#2d5a2d' : '#1a1a1a', color: r.in_catalog ? '#4caf50' : '#555' }}
+                  onClick={() => toggle(r.id, !r.published)}
+                  style={{ ...toggleBtn, background: r.published ? '#2d5a2d' : '#1a1a1a', color: r.published ? '#4caf50' : '#555' }}
                 >
-                  {r.in_catalog ? 'Да' : 'Нет'}
+                  {r.published ? 'Да' : 'Нет'}
                 </button>
               </td>
               <td style={td}>
-                <Link href={`/admin/artworks/${r.id}`} style={editLink}>Редактировать</Link>
+                <Link href={`/admin/journal/${r.id}`} style={editLink}>Редактировать</Link>
               </td>
             </tr>
           ))}
