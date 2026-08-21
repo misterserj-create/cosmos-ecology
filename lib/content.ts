@@ -1,3 +1,12 @@
+/**
+ * Чтение работ и событий. Основной источник - PostgreSQL (lib/db.ts),
+ * запасной - снимок в public/cache, который выручает, когда база недоступна.
+ *
+ * Файл назывался lib/airtable.ts: проект начинался на Airtable, и записи в
+ * кэше до сих пор лежат в его формате, с русскими именами полей. Самого
+ * Airtable в проекте нет с тех пор, как данные переехали в PostgreSQL и
+ * MinIO, поэтому имя переименовано по смыслу, а не по происхождению.
+ */
 import * as fs from 'fs'
 import * as path from 'path'
 import { defaultLocale, type Locale } from '@/i18n/config'
@@ -50,24 +59,27 @@ export interface Artwork {
   category: string
 }
 
-function parseArtworkRecord(rec: any, locale: Locale): Artwork {
-  const f = rec.fields
-  const imgs = f['Изображение'] || []
+/**
+ * Строка базы (или её снимок в кэше) - в работу для витрины.
+ * Один и тот же вид данных у обоих источников: кэш это дословный снимок
+ * выборки из PostgreSQL, а не выгрузка из чужой системы, как раньше.
+ */
+function toArtwork(r: Record<string, unknown>, locale: Locale): Artwork {
   return {
-    id: rec.id,
-    artId: f['ID'] || '',
-    title: f['Название'] || '',
-    author: f['Автор'] || '',
-    technique: enumLabel(TECHNIQUE_LABELS, f['Техника'] || '', locale),
-    materials: f['Материалы'] || '',
-    size: f['Габариты (см)'] || '',
-    year: f['Год'] || 0,
-    status: enumLabel(STATUS_LABELS, f['Статус'] || '', locale),
-    descShort: f['Описание (короткое)'] || '',
-    curatorText: f['Кураторский текст'] || '',
-    imageUrl: imgs[0]?.url || '',
-    inCatalog: f['В каталог'] === true,
-    category: enumLabel(CATEGORY_LABELS, f['Категория'] || '', locale),
+    id: String(r.id),
+    artId: String(r.art_id || ''),
+    title: String(r.title || ''),
+    author: String(r.author || ''),
+    technique: enumLabel(TECHNIQUE_LABELS, String(r.technique || ''), locale),
+    materials: String(r.materials || ''),
+    size: String(r.size || ''),
+    year: Number(r.year) || 0,
+    status: enumLabel(STATUS_LABELS, String(r.status || ''), locale),
+    descShort: String(r.desc_short || ''),
+    curatorText: String(r.curator_text || ''),
+    imageUrl: String(r.thumb_url || r.image_url || ''),
+    inCatalog: Boolean(r.in_catalog),
+    category: enumLabel(CATEGORY_LABELS, String(r.category || ''), locale),
   }
 }
 
@@ -89,30 +101,18 @@ export async function fetchArtworks(locale: Locale = defaultLocale): Promise<Art
     try {
       const { dbArtworksPublished } = await import('./db')
       const rows = await dbArtworksPublished(locale)
-      return rows.map((r: Record<string, unknown>) => ({
-        id: String(r.id),
-        artId: String(r.art_id || ''),
-        title: String(r.title || ''),
-        author: String(r.author || ''),
-        technique: enumLabel(TECHNIQUE_LABELS, String(r.technique || ''), locale),
-        materials: String(r.materials || ''),
-        size: String(r.size || ''),
-        year: Number(r.year) || 0,
-        status: enumLabel(STATUS_LABELS, String(r.status || ''), locale),
-        descShort: String(r.desc_short || ''),
-        curatorText: String(r.curator_text || ''),
-        imageUrl: String(r.thumb_url || r.image_url || ''),
-        inCatalog: Boolean(r.in_catalog),
-        category: enumLabel(CATEGORY_LABELS, String(r.category || ''), locale),
-      })).sort((a: Artwork, b: Artwork) => a.artId.localeCompare(b.artId))
+      return rows
+        .map((r: Record<string, unknown>) => toArtwork(r, locale))
+        .sort((a: Artwork, b: Artwork) => a.artId.localeCompare(b.artId))
     } catch (e) {
       console.error('DB fetch failed, falling back to cache:', e)
     }
   }
 
-  // Fallback — локальный JSON-кэш (Airtable выведен из проекта)
+  // Запасной путь: снимок выборки в public/cache
   return loadCachedArtworks()
-    .map(rec => parseArtworkRecord(rec, locale))
+    .filter(r => r.in_catalog)
+    .map(r => toArtwork(r, locale))
     .sort((a, b) => a.artId.localeCompare(b.artId))
 }
 
@@ -143,18 +143,17 @@ function toIsoDate(value: unknown): string {
   return String(value).slice(0, 10)
 }
 
-function parseEventRecord(rec: any, locale: Locale): Event {
-  const f = rec.fields
-  const imgs = f['Фото'] || []
+/** Строка базы (или её снимок в кэше) - в событие для витрины. */
+function toEvent(r: Record<string, unknown>, locale: Locale): Event {
   return {
-    id: rec.id,
-    title: f['Название'] || '',
-    type: enumLabel(EVENT_TYPE_LABELS, f['Тип'] || '', locale),
-    date: f['Дата'] || '',
-    place: f['Место'] || '',
-    description: f['Описание'] || '',
-    link: f['Ссылка'] || '',
-    imageUrl: imgs[0]?.url || '',
+    id: String(r.id),
+    title: String(r.title || ''),
+    type: enumLabel(EVENT_TYPE_LABELS, String(r.type || ''), locale),
+    date: toIsoDate(r.event_date),
+    place: String(r.place || ''),
+    description: String(r.description || ''),
+    link: String(r.link || ''),
+    imageUrl: String(r.thumb_url || r.image_url || ''),
   }
 }
 
@@ -164,21 +163,12 @@ export async function fetchEvents(locale: Locale = defaultLocale): Promise<Event
     try {
       const { dbEventsPublished } = await import('./db')
       const rows = await dbEventsPublished(locale)
-      return rows.map((r: Record<string, unknown>) => ({
-        id: String(r.id),
-        title: String(r.title || ''),
-        type: enumLabel(EVENT_TYPE_LABELS, String(r.type || ''), locale),
-        date: toIsoDate(r.event_date),
-        place: String(r.place || ''),
-        description: String(r.description || ''),
-        link: String(r.link || ''),
-        imageUrl: String(r.thumb_url || r.image_url || ''),
-      }))
+      return rows.map((r: Record<string, unknown>) => toEvent(r, locale))
     } catch (e) {
       console.error('DB events fetch failed, falling back:', e)
     }
   }
 
-  // Fallback — локальный JSON-кэш (Airtable выведен из проекта)
-  return loadCachedEvents().map(rec => parseEventRecord(rec, locale))
+  // Запасной путь: снимок выборки в public/cache
+  return loadCachedEvents().map(r => toEvent(r, locale))
 }

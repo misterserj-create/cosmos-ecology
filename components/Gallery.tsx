@@ -3,7 +3,7 @@ import { useState, useEffect, useRef, useMemo } from "react"
 import Image from "next/image"
 import gsap from "gsap"
 import { ScrollTrigger } from "gsap/ScrollTrigger"
-import type { Artwork } from "@/lib/airtable"
+import type { Artwork } from "@/lib/content"
 import { AUTHOR_FILTERS, type AuthorFilter } from "@/lib/site"
 import type { Dictionary } from "@/app/(site)/[lang]/dictionaries"
 

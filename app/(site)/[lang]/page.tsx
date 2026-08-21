@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation"
-import { fetchArtworks, fetchEvents } from "@/lib/airtable"
+import { fetchArtworks, fetchEvents } from "@/lib/content"
 import Nav from "@/components/Nav"
 import Gallery from "@/components/Gallery"
 import CosmicDescent from "@/components/scenes/CosmicDescent"
