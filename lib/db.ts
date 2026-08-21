@@ -3,8 +3,10 @@ import { defaultLocale, type Locale } from '@/i18n/config'
 import {
   ARTWORK_TRANSLATABLE,
   EVENT_TRANSLATABLE,
+  JOURNAL_TRANSLATABLE,
   artworkSourceHash,
   eventSourceHash,
+  journalSourceHash,
   isTranslationLocale,
   translationLocales,
   type TranslationLocale,
@@ -175,6 +177,149 @@ export async function dbEventToggle(id: string, val: boolean) {
   await p.query('UPDATE events SET published=$1 WHERE id=$2', [val, id])
 }
 
+// ── Журнал ───────────────────────────────────────────────────────────────
+
+const JOURNAL_BASE_COLUMNS =
+  'j.id, j.slug AS slug_ru, j.published, j.published_at, j.cover_url, j.gallery_urls, j.video_urls, ' +
+  'j.source_links, j.source_tg_id, j.tags, j.created_at, j.updated_at'
+
+/**
+ * Адреса публикации на всех языках, одной строкой: нужны для hreflang и
+ * переключателя языков. Пустой переводной slug заменяется русским уже в
+ * коде (см. lib/content.ts), здесь отдаём как есть.
+ */
+const JOURNAL_SLUGS_SUBQUERY =
+  `(SELECT COALESCE(json_object_agg(tt.lang, tt.slug) FILTER (WHERE tt.slug <> ''), '{}'::json)
+      FROM journal_post_translations tt WHERE tt.post_id = j.id) AS slugs`
+
+export async function dbJournalPosts() {
+  const p = getPool()!
+  const { rows } = await p.query(
+    'SELECT * FROM journal_posts ORDER BY published_at DESC NULLS LAST, id DESC'
+  )
+  return rows
+}
+
+/**
+ * Лента на выбранном языке. На русском без соединения, на остальных -
+ * LEFT JOIN с переводом и COALESCE по полю, как у работ. Slug на языке
+ * тоже накладывается: пустой перевод адреса отдаёт русский.
+ */
+export async function dbJournalPublished(locale: Locale = defaultLocale, limit?: number) {
+  const p = getPool()!
+  const tail = limit ? ` LIMIT ${Number(limit)}` : ''
+  if (locale === defaultLocale || !isTranslationLocale(locale)) {
+    const { rows } = await p.query(
+      `SELECT j.*, ${JOURNAL_SLUGS_SUBQUERY}
+         FROM journal_posts j
+        WHERE j.published = true
+        ORDER BY j.published_at DESC NULLS LAST, j.id DESC${tail}`
+    )
+    return rows
+  }
+  const { rows } = await p.query(
+    `SELECT ${JOURNAL_BASE_COLUMNS},
+            COALESCE(NULLIF(t.slug, ''), j.slug) AS slug,
+            ${translatedColumns('j', JOURNAL_TRANSLATABLE)},
+            ${JOURNAL_SLUGS_SUBQUERY}
+       FROM journal_posts j
+       LEFT JOIN journal_post_translations t
+         ON t.post_id = j.id AND t.lang = $1
+      WHERE j.published = true
+      ORDER BY j.published_at DESC NULLS LAST, j.id DESC${tail}`,
+    [locale]
+  )
+  return rows
+}
+
+/**
+ * Одна публикация по адресу на языке. Адрес ищем и среди переводных, и
+ * среди русских: пока английский slug не задан, /en/journal/<русский-slug>
+ * должен открываться. Неопубликованное не отдаём - витрине оно не нужно.
+ */
+export async function dbJournalBySlug(slug: string, locale: Locale = defaultLocale) {
+  const p = getPool()!
+  if (locale === defaultLocale || !isTranslationLocale(locale)) {
+    const { rows } = await p.query(
+      `SELECT j.*, ${JOURNAL_SLUGS_SUBQUERY}
+         FROM journal_posts j
+        WHERE j.published = true AND j.slug = $1`,
+      [slug]
+    )
+    return rows[0] || null
+  }
+  const { rows } = await p.query(
+    `SELECT ${JOURNAL_BASE_COLUMNS},
+            COALESCE(NULLIF(t.slug, ''), j.slug) AS slug,
+            ${translatedColumns('j', JOURNAL_TRANSLATABLE)},
+            ${JOURNAL_SLUGS_SUBQUERY}
+       FROM journal_posts j
+       LEFT JOIN journal_post_translations t
+         ON t.post_id = j.id AND t.lang = $1
+      WHERE j.published = true AND (t.slug = $2 OR j.slug = $2)
+      ORDER BY (t.slug = $2) DESC NULLS LAST
+      LIMIT 1`,
+    [locale, slug]
+  )
+  return rows[0] || null
+}
+
+export async function dbJournalById(id: string) {
+  const p = getPool()!
+  const { rows } = await p.query('SELECT * FROM journal_posts WHERE id = $1', [id])
+  return rows[0] || null
+}
+
+function textArray(v: unknown): string[] {
+  if (Array.isArray(v)) return v.map(String).filter(Boolean)
+  if (typeof v === 'string') return v.split(/\r?\n/).map(s => s.trim()).filter(Boolean)
+  return []
+}
+
+export async function dbJournalUpsert(data: Record<string, unknown>, id?: string) {
+  const p = getPool()!
+  const values = [
+    String(data.slug || ''),
+    Boolean(data.published),
+    data.published_at || null,
+    String(data.title || ''),
+    String(data.excerpt || ''),
+    String(data.body || ''),
+    String(data.cover_url || ''),
+    textArray(data.gallery_urls),
+    textArray(data.video_urls),
+    textArray(data.source_links),
+    textArray(data.tags),
+  ]
+  if (id) {
+    const { rows } = await p.query(
+      `UPDATE journal_posts SET slug=$1, published=$2, published_at=$3, title=$4, excerpt=$5,
+         body=$6, cover_url=$7, gallery_urls=$8, video_urls=$9, source_links=$10, tags=$11,
+         updated_at=NOW()
+       WHERE id=$12 RETURNING *`,
+      [...values, id]
+    )
+    return rows[0]
+  }
+  const { rows } = await p.query(
+    `INSERT INTO journal_posts (slug, published, published_at, title, excerpt, body, cover_url,
+       gallery_urls, video_urls, source_links, tags)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) RETURNING *`,
+    values
+  )
+  return rows[0]
+}
+
+export async function dbJournalDelete(id: string) {
+  const p = getPool()!
+  await p.query('DELETE FROM journal_posts WHERE id=$1', [id])
+}
+
+export async function dbJournalToggle(id: string, val: boolean) {
+  const p = getPool()!
+  await p.query('UPDATE journal_posts SET published=$1, updated_at=NOW() WHERE id=$2', [val, id])
+}
+
 // ── Переводы для админки ─────────────────────────────────────────────────
 
 export type TranslationRow = {
@@ -233,6 +378,21 @@ export async function dbArtworkTranslations(id: string) {
   }
 }
 
+/** У журнала переводится и адрес: slug идёт полем перевода, но в отпечаток не входит. */
+const JOURNAL_TRANSLATION_FIELDS = [...JOURNAL_TRANSLATABLE, 'slug'] as const
+
+export async function dbJournalTranslations(id: string) {
+  const source = await dbJournalById(id)
+  if (!source) return null
+  const sourceHash = journalSourceHash(source)
+  return {
+    sourceHash,
+    translations: await loadTranslations(
+      'journal_post_translations', 'post_id', id, JOURNAL_TRANSLATION_FIELDS, sourceHash
+    ),
+  }
+}
+
 export async function dbEventTranslations(id: string) {
   const source = await dbEventById(id)
   if (!source) return null
@@ -282,6 +442,18 @@ export async function dbArtworkTranslationSave(
   await saveTranslation(
     'artwork_translations', 'artwork_id', id, lang,
     ARTWORK_TRANSLATABLE, values, artworkSourceHash(source)
+  )
+}
+
+export async function dbJournalTranslationSave(
+  id: string, lang: string, values: Record<string, unknown>
+) {
+  if (!isTranslationLocale(lang)) throw new Error(`Нет такого языка перевода: ${lang}`)
+  const source = await dbJournalById(id)
+  if (!source) throw new Error(`Публикация ${id} не найдена`)
+  await saveTranslation(
+    'journal_post_translations', 'post_id', id, lang,
+    JOURNAL_TRANSLATION_FIELDS, values, journalSourceHash(source)
   )
 }
 

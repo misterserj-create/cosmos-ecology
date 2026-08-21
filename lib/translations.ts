@@ -34,8 +34,15 @@ export function isTranslationLocale(value: string): value is TranslationLocale {
 export const ARTWORK_TRANSLATABLE = ["title", "materials", "desc_short", "curator_text"] as const
 export const EVENT_TRANSLATABLE = ["title", "place", "description"] as const
 
+/**
+ * Публикации журнала. Адрес (slug) в отпечаток не входит: он переводится
+ * отдельно, и смена русского адреса не делает английский текст устаревшим.
+ */
+export const JOURNAL_TRANSLATABLE = ["title", "excerpt", "body"] as const
+
 export type ArtworkTranslatableField = (typeof ARTWORK_TRANSLATABLE)[number]
 export type EventTranslatableField = (typeof EVENT_TRANSLATABLE)[number]
+export type JournalTranslatableField = (typeof JOURNAL_TRANSLATABLE)[number]
 
 /** Разделитель единиц: в текстах работ он не встречается, склейка однозначна. */
 const UNIT_SEPARATOR = "\u001F"
@@ -53,4 +60,9 @@ export function artworkSourceHash(row: Record<string, unknown>): string {
 /** Отпечаток русского оригинала события. */
 export function eventSourceHash(row: Record<string, unknown>): string {
   return hashFields(row, EVENT_TRANSLATABLE)
+}
+
+/** Отпечаток русского оригинала публикации журнала. */
+export function journalSourceHash(row: Record<string, unknown>): string {
+  return hashFields(row, JOURNAL_TRANSLATABLE)
 }

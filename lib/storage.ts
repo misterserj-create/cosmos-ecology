@@ -49,3 +49,25 @@ export async function uploadImage(
     thumbUrl: `${PUBLIC_URL}/${BUCKET}/thumbs/${slug}`,
   }
 }
+
+/**
+ * Видео для журнала: кладём как есть, без превью - sharp видео не читает.
+ * Папка journal/video, та же, куда скрипт db/seed/journal_from_tg.py
+ * заливает ролики из Telegram.
+ */
+export async function uploadVideo(
+  buffer: Buffer,
+  filename: string,
+  contentType = 'video/mp4'
+): Promise<{ videoUrl: string }> {
+  const client = getClient()
+  const slug = `${Date.now()}-${filename.replace(/[^a-z0-9.]/gi, '_')}`
+  await client.send(new PutObjectCommand({
+    Bucket: BUCKET,
+    Key: `journal/video/${slug}`,
+    Body: buffer,
+    ContentType: contentType,
+    ACL: 'public-read',
+  }))
+  return { videoUrl: `${PUBLIC_URL}/${BUCKET}/journal/video/${slug}` }
+}

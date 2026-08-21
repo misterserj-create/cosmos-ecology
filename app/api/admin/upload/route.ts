@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { uploadImage } from '@/lib/storage'
+import { uploadImage, uploadVideo } from '@/lib/storage'
 
 export async function POST(req: NextRequest) {
   try {
@@ -8,6 +8,10 @@ export async function POST(req: NextRequest) {
     if (!file) return NextResponse.json({ error: 'no file' }, { status: 400 })
 
     const buffer = Buffer.from(await file.arrayBuffer())
+    // Видео (журнал) идёт мимо sharp: ему превью не сделать, кладём как есть.
+    if (file.type.startsWith('video/')) {
+      return NextResponse.json(await uploadVideo(buffer, file.name, file.type))
+    }
     const urls = await uploadImage(buffer, file.name, file.type)
     return NextResponse.json(urls)
   } catch (e: unknown) {
