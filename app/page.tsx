@@ -70,7 +70,7 @@ const TELEMETRY: Array<{
     source: "BryceTech, Orbital Launches Year in Review",
     sourceUrl: "https://brycetech.com/reports/report-documents/global-orbital-activity-2025/",
     asOf: "итоги 2025 года",
-    trend: "+54% к 2024 году — мегасозвездия ускоряют темп",
+    trend: "+54% к 2024 году – мегасозвездия ускоряют темп",
   },
 ]
 
@@ -80,7 +80,7 @@ export default async function Home() {
 
   return (
     <>
-      <Nav />
+      <Nav hasEvents={events.length > 0} />
 
       <CosmicDescent>
         {/* ── HERO (акт 1: тишина) ── */}
@@ -111,10 +111,37 @@ export default async function Home() {
             <div className="fade-line" style={{ marginBottom: 48 }} />
             <Reveal className="grid-venues" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 2 }}>
               {VENUES.map(v => (
-                <div key={v.name} className="reveal-item" style={{ background: "#0d0d0d", border: "1px solid #1a1a1a", padding: "48px 40px", transition: "border-color 0.3s" }}>
+                <div
+                  key={v.name}
+                  className="reveal-item"
+                  style={{
+                    background: v.current ? "#111008" : "#0d0d0d",
+                    border: v.current ? "1px solid #4a3d18" : "1px solid #1a1a1a",
+                    padding: "48px 40px",
+                    transition: "border-color 0.3s",
+                  }}
+                >
+                  {v.current && (
+                    <div style={{ color: "#c9a84c", fontSize: "0.7rem", letterSpacing: "0.28em", textTransform: "uppercase", marginBottom: 14 }}>
+                      Идёт сейчас
+                    </div>
+                  )}
                   <div style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: "1.75rem", marginBottom: 16 }}>{v.name}</div>
                   <div style={{ color: "#c9a84c", fontSize: "1.15rem", marginBottom: 8 }}>{v.dates}</div>
                   <div style={{ color: "#777", fontSize: "1.05rem" }}>{v.address}</div>
+                  {v.note && (
+                    <div style={{ color: "#8a8a8a", fontSize: "0.9rem", lineHeight: 1.6, marginTop: 18 }}>{v.note}</div>
+                  )}
+                  {v.url && (
+                    <a
+                      href={v.url}
+                      target="_blank"
+                      rel="noopener"
+                      style={{ display: "inline-block", marginTop: 16, color: "#c9a84c", fontSize: "0.8rem", letterSpacing: "0.18em", textTransform: "uppercase", textDecoration: "none", borderBottom: "1px solid #4a3d18", paddingBottom: 4 }}
+                    >
+                      Сайт музея →
+                    </a>
+                  )}
                 </div>
               ))}
             </Reveal>
@@ -134,7 +161,7 @@ export default async function Home() {
               ))}
             </div>
             <p style={{ color: "#444", fontSize: "0.72rem", marginBottom: 64 }}>
-              Нажмите (i) на карточке — источник и дата. У массы мусора можно кликнуть по числу — сравнение для масштаба.
+              Нажмите (i) на карточке – источник и дата. У массы мусора можно кликнуть по числу – сравнение для масштаба.
             </p>
           </div>
           <div className="grid-about" style={{ maxWidth: 1200, margin: "0 auto", display: "grid", gridTemplateColumns: "280px 1fr", gap: 80, alignItems: "start" }}>
@@ -144,7 +171,7 @@ export default async function Home() {
             </div>
             <div>
               <p style={{ fontSize: "1.1rem", lineHeight: 1.85, color: "#999", marginBottom: 20 }}>
-                Мусор на земле и мусор на орбите — одна и та же субстанция. Единый индустриальный
+                Мусор на земле и мусор на орбите – одна и та же субстанция. Единый индустриальный
                 след, который мы сначала вырвали из недр планеты, а затем забросили над своими головами.
               </p>
               <p style={{ fontSize: "1.05rem", lineHeight: 1.85, color: "#888", marginBottom: 20 }}>
@@ -154,7 +181,7 @@ export default async function Home() {
                 лампы, тумблеры великой эпохи очищаются от слоёв времени и пересобираются в новые смыслы.
               </p>
               <p style={{ fontSize: "1.05rem", lineHeight: 1.85, color: "#666" }}>
-                Горы мусора на орбите — вызов нашему интеллекту и духу. Мы уже полноправные и
+                Горы мусора на орбите – вызов нашему интеллекту и духу. Мы уже полноправные и
                 ответственные жители Вселенной. Пора вести себя соответственно.
               </p>
             </div>
@@ -215,14 +242,15 @@ export default async function Home() {
       </section>
 
       {/* ── СОБЫТИЯ ── */}
+      {/* Пустой раздел с заглушкой "скоро появятся" выглядит как брошенный
+          сайт. Пока событий нет, раздела нет вовсе — пункт меню тоже
+          скрывается в Nav по этому же признаку. */}
+      {events.length > 0 && (
       <section id="events" className="grain" style={{ padding: "80px 24px", borderTop: "1px solid #111", position: "relative", background: "var(--earth-bg)" }}>
         <div style={{ maxWidth: 1200, margin: "0 auto" }}>
           <div className="section-label" style={{ marginBottom: 8 }}>Мероприятия и новости</div>
           <div className="fade-line" style={{ marginBottom: 48 }} />
-          {events.length === 0 ? (
-            <p style={{ color: "#444", fontSize: "0.9rem" }}>Мероприятия скоро появятся</p>
-          ) : (
-            <Reveal className="grid-events" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(340px, 1fr))", gap: 2 }}>
+          <Reveal className="grid-events" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(340px, 1fr))", gap: 2 }}>
               {events.map(ev => (
                 <div key={ev.id} className="reveal-item" style={{ background: "#0d0d0d", border: "1px solid #1a1a1a", overflow: "hidden" }}>
                   {ev.imageUrl && (
@@ -247,10 +275,10 @@ export default async function Home() {
                   </div>
                 </div>
               ))}
-            </Reveal>
-          )}
+          </Reveal>
         </div>
       </section>
+      )}
 
       {/* ── ИСТОРИЯ ── */}
       <section id="history" className="grain" style={{ padding: "80px 24px", borderTop: "1px solid #111", position: "relative", background: "var(--earth-bg)" }}>

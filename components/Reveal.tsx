@@ -37,22 +37,49 @@ export default function Reveal({
       return
     }
 
-    const ctx = gsap.context(() => {
-      ScrollTrigger.batch(items, {
-        start: "top 90%",
-        onEnter: batch =>
-          gsap.to(batch, {
-            opacity: 1,
-            y: 0,
-            filter: "blur(0px)",
-            duration: 0.8,
-            ease: "power3.out",
-            stagger: 0.08,
-            overwrite: true,
-          }),
-      })
-    }, ref)
-    return () => ctx.revert()
+    // Было на ScrollTrigger.batch, и на этом сайт наполовину не открывался:
+    // при мгновенном прыжке по якорю из меню триггеры не прогонялись, и
+    // секции "Команда" и "История" оставались пустыми, в opacity:0. Плюс
+    // overwrite:true обрывал недоигравшие твины предыдущей пачки, и часть
+    // карточек навсегда зависала полупрозрачной и размытой.
+    // IntersectionObserver сообщает состояние сразу при подписке, поэтому
+    // после любого прыжка видимые карточки проявляются, а не пропадают.
+    let queued: HTMLElement[] = []
+    let frame: number | null = null
+
+    const observer = new IntersectionObserver(
+      entries => {
+        const arrived = entries
+          .filter(e => e.isIntersecting)
+          .map(e => e.target as HTMLElement)
+        if (!arrived.length) return
+        arrived.forEach(el => observer.unobserve(el))
+        queued.push(...arrived)
+        // Собираем всё, что пришло в одном кадре, в одну пачку — иначе
+        // ступенчатая задержка считается отдельно для каждой карточки.
+        if (frame === null) {
+          frame = requestAnimationFrame(() => {
+            gsap.to(queued, {
+              opacity: 1,
+              y: 0,
+              filter: "blur(0px)",
+              duration: 0.8,
+              ease: "power3.out",
+              stagger: 0.08,
+            })
+            queued = []
+            frame = null
+          })
+        }
+      },
+      { rootMargin: "0px 0px -10% 0px" }
+    )
+
+    items.forEach(el => observer.observe(el))
+    return () => {
+      if (frame !== null) cancelAnimationFrame(frame)
+      observer.disconnect()
+    }
   }, [children])
 
   return (

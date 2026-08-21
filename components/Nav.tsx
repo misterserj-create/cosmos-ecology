@@ -1,7 +1,7 @@
 "use client"
 import { useState, useEffect } from "react"
 
-const links = [
+const allLinks = [
   { href: "#venues", label: "Площадки" },
   { href: "#about", label: "О проекте" },
   { href: "#gallery", label: "Галерея" },
@@ -11,7 +11,10 @@ const links = [
   { href: "#history", label: "История" },
 ]
 
-export default function Nav() {
+// Раздел событий на странице показывается только когда события есть.
+// Пункт меню, ведущий в никуда, — верный признак брошенного сайта.
+export default function Nav({ hasEvents = true }: { hasEvents?: boolean }) {
+  const links = hasEvents ? allLinks : allLinks.filter(l => l.href !== "#events")
   const [scrolled, setScrolled] = useState(false)
   const [open, setOpen] = useState(false)
 

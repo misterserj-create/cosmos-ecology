@@ -21,6 +21,11 @@ export type Venue = {
   start: string
   end: string
   streetAddress: string
+  /** Площадка, где выставку можно увидеть прямо сейчас. */
+  current?: boolean
+  /** Сайт площадки: там расписание и билеты, мы их не дублируем. */
+  url?: string
+  note?: string
 }
 
 export const VENUES: Venue[] = [
@@ -39,6 +44,9 @@ export const VENUES: Venue[] = [
     start: "2026-03-15",
     end: "2026-06-15",
     streetAddress: "2-я Рыбинская ул., 21, стр. 1",
+    current: true,
+    url: "https://sputnikmuseum.ru/",
+    note: "Вход по билетам музея. Расписание и билеты - на сайте «Спутника».",
   },
   {
     name: "Галерея «ART SPACE»",
