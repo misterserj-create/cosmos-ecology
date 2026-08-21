@@ -44,9 +44,14 @@ export default function Reveal({
     // карточек навсегда зависала полупрозрачной и размытой.
     // IntersectionObserver сообщает состояние сразу при подписке, поэтому
     // после любого прыжка видимые карточки проявляются, а не пропадают.
-    let queued: HTMLElement[] = []
-    let frame: number | null = null
-
+    // Показ запускается прямо в обработчике, без откладывания на следующий
+    // кадр: IntersectionObserver и так отдаёт все совпавшие элементы одной
+    // пачкой. Промежуточная очередь на requestAnimationFrame успела побыть
+    // в коде ровно одну выкладку и стоила того: элементы снимались с
+    // наблюдения сразу, а показ откладывался, и если между этим React
+    // пересоздавал эффект, отложенный кадр отменялся - карточки оставались
+    // в нуле навсегда. На быстром локальном сервере это не воспроизводилось,
+    // на живом сайте воспроизвелось с первого раза.
     const observer = new IntersectionObserver(
       entries => {
         const arrived = entries
@@ -54,32 +59,20 @@ export default function Reveal({
           .map(e => e.target as HTMLElement)
         if (!arrived.length) return
         arrived.forEach(el => observer.unobserve(el))
-        queued.push(...arrived)
-        // Собираем всё, что пришло в одном кадре, в одну пачку — иначе
-        // ступенчатая задержка считается отдельно для каждой карточки.
-        if (frame === null) {
-          frame = requestAnimationFrame(() => {
-            gsap.to(queued, {
-              opacity: 1,
-              y: 0,
-              filter: "blur(0px)",
-              duration: 0.8,
-              ease: "power3.out",
-              stagger: 0.08,
-            })
-            queued = []
-            frame = null
-          })
-        }
+        gsap.to(arrived, {
+          opacity: 1,
+          y: 0,
+          filter: "blur(0px)",
+          duration: 0.8,
+          ease: "power3.out",
+          stagger: 0.08,
+        })
       },
       { rootMargin: "0px 0px -10% 0px" }
     )
 
     items.forEach(el => observer.observe(el))
-    return () => {
-      if (frame !== null) cancelAnimationFrame(frame)
-      observer.disconnect()
-    }
+    return () => observer.disconnect()
   }, [children])
 
   return (
