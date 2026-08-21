@@ -5,7 +5,7 @@ function hash(s: string) {
   return createHash('sha256').update(s).digest('hex')
 }
 
-export function middleware(req: NextRequest) {
+export function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl
   if (!pathname.startsWith('/admin')) return NextResponse.next()
   if (pathname === '/admin/login') return NextResponse.next()
