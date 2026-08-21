@@ -2,11 +2,7 @@
 
 import { useMemo, useRef } from "react"
 import { Canvas, useFrame, useLoader } from "@react-three/fiber"
-import { Html } from "@react-three/drei"
 import * as THREE from "three"
-import { SCENE_CITIES } from "@/lib/site"
-
-type CityId = (typeof SCENE_CITIES)[number]["id"]
 
 const DEBRIS_COUNT_FULL = 2000
 const DEBRIS_COUNT_LITE = 220
@@ -42,8 +38,10 @@ function Clouds({ segments }: { segments: number }) {
 
 // Города проекта. Метки живут внутри меша Земли, поэтому уезжают вместе с
 // её вращением и прячутся за горизонт, как настоящая точка на поверхности.
-// Координаты - в lib/site.ts, подписи приходят из словаря.
-export type CityLabels = Record<CityId, string>
+const CITIES = [
+  { name: "Москва", lat: 55.75, lon: 37.62 },
+  { name: "Санкт-Петербург", lat: 59.94, lon: 30.31 },
+]
 
 /** Широта/долгота → точка на сфере в системе координат THREE.SphereGeometry. */
 function latLonToVec(lat: number, lon: number, r: number) {
@@ -56,74 +54,52 @@ function latLonToVec(lat: number, lon: number, r: number) {
   )
 }
 
-function CityMarker({ name, lat, lon }: { name: string; lat: number; lon: number }) {
+function CityMarker({ lat, lon }: { lat: number; lon: number }) {
   const groupRef = useRef<THREE.Group>(null)
-  const labelRef = useRef<HTMLDivElement>(null)
   const worldPos = useMemo(() => new THREE.Vector3(), [])
 
-  const { position, quaternion } = useMemo(() => {
-    const dir = latLonToVec(lat, lon, 1)
-    const q = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir)
-    return { position: dir.clone().multiplyScalar(1.001), quaternion: q }
-  }, [lat, lon])
+  const position = useMemo(
+    () => latLonToVec(lat, lon, 1).multiplyScalar(1.002),
+    [lat, lon]
+  )
 
   useFrame(({ camera }) => {
     const g = groupRef.current
     if (!g) return
     g.getWorldPosition(worldPos)
-    // Центр планеты в мировых координатах — начало координат, поэтому нормаль
+    // Центр планеты в мировых координатах - начало координат, поэтому нормаль
     // поверхности в точке метки это сама её позиция.
-    const facing = worldPos.clone().normalize().dot(camera.position.clone().sub(worldPos).normalize())
-    // Гасим метку, пока она уходит за лимб, а не выключаем скачком.
-    const visible = Math.max(0, Math.min(1, (facing - 0.05) / 0.3))
-    g.visible = visible > 0.01
-    if (labelRef.current) labelRef.current.style.opacity = String(visible)
+    const facing = worldPos
+      .clone()
+      .normalize()
+      .dot(camera.position.clone().sub(worldPos).normalize())
+    // Прячем точку, когда она уходит за лимб.
+    g.visible = facing > 0.06
   })
 
+  // Только точка: подписи «Москва» и «Санкт-Петербург» на близкой камере
+  // налезали друг на друга - города рядом, а текст длинный.
   return (
-    <group ref={groupRef} position={position} quaternion={quaternion}>
-      <mesh position={[0, 0.004, 0]}>
-        <sphereGeometry args={[0.0045, 10, 10]} />
+    <group ref={groupRef} position={position}>
+      <mesh>
+        <sphereGeometry args={[0.0038, 10, 10]} />
         <meshBasicMaterial color="#f0c860" toneMapped={false} />
       </mesh>
-      {/* Тонкий штырёк вверх — метку видно даже поверх светлой поверхности. */}
-      <mesh position={[0, 0.021, 0]}>
-        <cylinderGeometry args={[0.0007, 0.0007, 0.034, 5]} />
-        <meshBasicMaterial color="#f0c860" transparent opacity={0.55} toneMapped={false} />
-      </mesh>
-      <Html position={[0, 0.05, 0]} center distanceFactor={1.5} zIndexRange={[2, 0]}>
-        <div
-          ref={labelRef}
-          style={{
-            fontFamily: "var(--font-body), system-ui, sans-serif",
-            fontSize: 11,
-            letterSpacing: "0.14em",
-            textTransform: "uppercase",
-            color: "#f0c860",
-            whiteSpace: "nowrap",
-            textShadow: "0 1px 6px rgba(0,0,0,0.9)",
-            pointerEvents: "none",
-            userSelect: "none",
-          }}
-        >
-          {name}
-        </div>
-      </Html>
     </group>
   )
 }
 
-function CityMarkers({ labels }: { labels: CityLabels }) {
+function CityMarkers() {
   return (
     <>
-      {SCENE_CITIES.map(c => (
-        <CityMarker key={c.id} name={labels[c.id]} lat={c.lat} lon={c.lon} />
+      {CITIES.map(c => (
+        <CityMarker key={c.name} lat={c.lat} lon={c.lon} />
       ))}
     </>
   )
 }
 
-function EarthCore({ spin, cityLabels }: { spin: { current: number }; cityLabels: CityLabels }) {
+function EarthCore({ spin }: { spin: { current: number } }) {
   const dayMap = useLoader(THREE.TextureLoader, "/textures/earth-daymap.jpg")
   dayMap.colorSpace = THREE.SRGBColorSpace
 
@@ -147,17 +123,27 @@ function EarthCore({ spin, cityLabels }: { spin: { current: number }; cityLabels
       <mesh ref={earthRef} rotation={[0, EARTH_INITIAL_YAW, 0]}>
         <sphereGeometry args={[1, segments, segments]} />
         <meshStandardMaterial map={dayMap} roughness={0.75} metalness={0.05} />
-        <CityMarkers labels={cityLabels} />
+        <CityMarkers />
       </mesh>
       <Clouds segments={segments} />
     </>
   )
 }
 
-// Лёгкая версия Земли для мобильных: без текстур вообще (сплошной цвет) —
-// декодирование JPEG-текстуры в GPU-память на слабых Android-GPU было
-// вероятной причиной потери WebGL-контекста на середине сессии.
+// Лёгкая версия Земли для мобильных. Раньше была вообще без текстуры -
+// сплошной синий шар, и на телефоне от сцены не оставалось ничего. Текстуру
+// когда-то убрали, подозревая в ней потерю WebGL-контекста на слабых
+// Android-GPU, но 1024x512 (137 КБ, 2 МБ в памяти GPU) месяцами работала на
+// десктопе без единого срыва - дело было не в ней. Возвращаем именно этот
+// размер, а не общий файл 4096x2048: тот занял бы 32 МБ видеопамяти.
 function EarthLite({ spin }: { spin: { current: number } }) {
+  const dayMap = useLoader(THREE.TextureLoader, "/textures/earth-daymap-1k.jpg")
+  dayMap.colorSpace = THREE.SRGBColorSpace
+  // Без мип-уровней: их построение на слабом GPU это лишняя работа и лишняя
+  // треть памяти, а камера здесь стоит на одном расстоянии.
+  dayMap.generateMipmaps = false
+  dayMap.minFilter = THREE.LinearFilter
+
   const earthRef = useRef<THREE.Mesh>(null)
 
   useFrame((_, delta) => {
@@ -167,8 +153,9 @@ function EarthLite({ spin }: { spin: { current: number } }) {
 
   return (
     <mesh ref={earthRef} rotation={[0, EARTH_INITIAL_YAW, 0]}>
-      <sphereGeometry args={[1, 32, 32]} />
-      <meshStandardMaterial color="#3d5f7a" roughness={0.85} metalness={0} />
+      <sphereGeometry args={[1, 40, 40]} />
+      <meshStandardMaterial map={dayMap} roughness={0.8} metalness={0.03} />
+      <CityMarkers />
     </mesh>
   )
 }
@@ -555,32 +542,51 @@ function Streaks() {
   )
 }
 
-function Rig({ progress }: { progress: DescentProgress }) {
-  const target = useMemo(() => new THREE.Vector3(), [])
+// Направление на камеру: наклон тот же на любом экране, меняется только
+// удаление и наклон взгляда.
+const CAM_DIR = new THREE.Vector3(0.35, 0.62, 1.86).normalize()
+const ORIGIN = new THREE.Vector3(0, 0, 0)
 
-  useFrame(({ camera }) => {
+function Rig({ progress }: { progress: DescentProgress }) {
+  useFrame(({ camera, size }) => {
     const p = progress.current
-    // Камера стоит НА низкой орбите, а не смотрит на глобус издалека. Земля
-    // закрывает нижние две трети кадра и обрезается краями — как на снимках
-    // с орбиты. Именно из-за дальней камеры рой читался как отдельное облако
-    // вокруг шарика: теперь обломки проходят на фоне самой поверхности.
-    camera.position.set(0.35 + p * 0.2, 0.62 - p * 0.32, 1.86 - p * 0.41)
-    // Центр планеты уходит ниже кадра, в кадре остаётся дуга горизонта.
-    target.set(0, 0.88 + p * 0.27, 0)
-    camera.lookAt(target)
+    const cam = camera as THREE.PerspectiveCamera
+
+    // На вертикальном экране телефона горизонтальное поле зрения втрое
+    // уже, чем на десктопе, и та же камера показывает не дугу горизонта, а
+    // сплошную поверхность под самым носом. Поэтому на портретных экранах
+    // камера отходит дальше: планета остаётся крупной, но кривизна и
+    // атмосферная дуга снова попадают в кадр, а сверху остаётся чёрное небо
+    // под заголовок.
+    const aspect = size.width / Math.max(size.height, 1)
+    const portrait = Math.min(Math.max((1.2 - aspect) / 0.7, 0), 1)
+
+    // Камера стоит НА низкой орбите, а не смотрит на глобус издалека: обломки
+    // идут на фоне самой поверхности, а не висят облаком вокруг шарика.
+    const dist = (1.99 - p * 0.42) * (1 + portrait * 0.52)
+    camera.position.copy(CAM_DIR).multiplyScalar(dist)
+
+    // Угловой радиус планеты с этой точки.
+    const earthAngle = Math.asin(Math.min(1 / dist, 1))
+    const halfFovV = ((cam.fov ?? 34) * Math.PI) / 360
+    // Куда поставить верхний край планеты относительно центра кадра: на
+    // широком экране чуть выше центра, на узком чуть ниже - там нужнее небо.
+    const limbAt = halfFovV * (0.25 - portrait * 0.52 + p * 0.1)
+
+    camera.lookAt(ORIGIN)
+    // Задираем взгляд так, чтобы центр планеты ушёл под нижний край кадра
+    // и остался виден только горизонт.
+    camera.rotateX(earthAngle - limbAt)
   })
   return null
 }
 
 export default function DebrisField({
   progress,
-  cityLabels,
   lite = false,
   onContextLost,
 }: {
   progress: DescentProgress
-  /** Подписи Москвы и Петербурга на языке страницы. */
-  cityLabels: CityLabels
   /** Урезанная версия для тач-устройств: меньше частиц, без Луны/спутников/
    *  пролётов/облаков — стабильность на слабых мобильных GPU важнее полноты. */
   lite?: boolean
@@ -617,7 +623,7 @@ export default function DebrisField({
           и видимая разница в скорости читается как "это орбита", а не
           жёсткая сцепка с планетой. */}
       <group rotation={[0, 0, 0.41]}>
-        {lite ? <EarthLite spin={spin} /> : <EarthCore spin={spin} cityLabels={cityLabels} />}
+        {lite ? <EarthLite spin={spin} /> : <EarthCore spin={spin} />}
         <Atmosphere progress={progress} lite={lite} />
         <Debris progress={progress} lite={lite} />
         {!lite && <Satellites progress={progress} />}

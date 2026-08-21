@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react"
 import dynamic from "next/dynamic"
 import gsap from "gsap"
 import { ScrollTrigger } from "gsap/ScrollTrigger"
-import type { CityLabels, DescentProgress } from "./DebrisField"
+import type { DescentProgress } from "./DebrisField"
 
 const DebrisField = dynamic(() => import("./DebrisField"), { ssr: false })
 
@@ -19,14 +19,7 @@ if (typeof window !== "undefined") {
  * Отключается по prefers-reduced-motion и на узких экранах — остаётся
  * только статичный радиальный градиент, который уже был в Hero.
  */
-export default function CosmicDescent({
-  children,
-  cityLabels,
-}: {
-  children: React.ReactNode
-  /** Подписи городов на глобусе - единственный текст внутри сцены. */
-  cityLabels: CityLabels
-}) {
+export default function CosmicDescent({ children }: { children: React.ReactNode }) {
   const wrapperRef = useRef<HTMLDivElement>(null)
   const washRef = useRef<HTMLDivElement>(null)
   const scrimRef = useRef<HTMLDivElement>(null)
@@ -134,11 +127,14 @@ export default function CosmicDescent({
             <DebrisField
               key={sceneKey}
               progress={progress.current}
-              cityLabels={cityLabels}
               lite={lite}
               onContextLost={handleContextLost}
             />
           )}
+          {/* На узком экране планета занимает почти весь кадр, и подзаголовок
+              с кнопкой ложатся на освещённую поверхность. Притемняем низ
+              кадра - только на телефонах, на широком экране низ и так чёрный. */}
+          <div className="hero-scrim" aria-hidden />
           <div
             ref={washRef}
             style={{

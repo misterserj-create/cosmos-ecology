@@ -28,7 +28,7 @@ export default async function Home({ params }: { params: Promise<{ lang: string 
     <>
       <Nav dict={dict.nav} locale={lang} hasEvents={events.length > 0} />
 
-      <CosmicDescent cityLabels={dict.scene.cities}>
+      <CosmicDescent>
         {/* ── HERO (акт 1: тишина) ── */}
         <section style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minHeight: "100vh", padding: "120px 24px 80px", textAlign: "center", position: "relative" }}>
           <div style={{ position: "relative", zIndex: 1, maxWidth: 800 }}>

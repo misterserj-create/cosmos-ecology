@@ -43,9 +43,6 @@ export default function Gallery({ artworks, dict }: { artworks: Artwork[]; dict:
     // Тот же случай, что и в Reveal: ScrollTrigger.batch с overwrite:true
     // оставлял часть карточек навсегда размытыми при быстрой прокрутке, а
     // после прыжка по якорю "Галерея" сетка могла не проявиться совсем.
-    let queued: HTMLElement[] = []
-    let frame: number | null = null
-
     const observer = new IntersectionObserver(
       entries => {
         const arrived = entries
@@ -53,31 +50,21 @@ export default function Gallery({ artworks, dict }: { artworks: Artwork[]; dict:
           .map(e => e.target as HTMLElement)
         if (!arrived.length) return
         arrived.forEach(el => observer.unobserve(el))
-        queued.push(...arrived)
-        if (frame === null) {
-          frame = requestAnimationFrame(() => {
-            gsap.to(queued, {
-              opacity: 1,
-              y: 0,
-              scale: 1,
-              filter: "blur(0px)",
-              duration: 0.9,
-              ease: "power3.out",
-              stagger: 0.08,
-            })
-            queued = []
-            frame = null
-          })
-        }
+        gsap.to(arrived, {
+          opacity: 1,
+          y: 0,
+          scale: 1,
+          filter: "blur(0px)",
+          duration: 0.9,
+          ease: "power3.out",
+          stagger: 0.08,
+        })
       },
       { rootMargin: "0px 0px -8% 0px" }
     )
 
     cards.forEach(el => observer.observe(el))
-    return () => {
-      if (frame !== null) cancelAnimationFrame(frame)
-      observer.disconnect()
-    }
+    return () => observer.disconnect()
   }, [filtered])
 
   // Клавиатурная навигация в лайтбоксе
