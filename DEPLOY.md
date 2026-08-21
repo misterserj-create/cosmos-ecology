@@ -1,239 +1,178 @@
-# 🚀 Инструкция по развертыванию на Aeza
+# Развёртывание
 
-## Предварительные требования
+Next.js 16 (App Router), Node.js 20+. Данные - PostgreSQL, картинки - MinIO
+(S3-совместимое хранилище). Airtable из проекта выведен: `lib/airtable.ts` сохранил
+только имя файла, читает он базу, а при недоступной базе - локальный снимок в
+`public/cache/`.
 
-- Ubuntu 22.04 или выше (на сервере Aeza)
-- Node.js 20+
-- npm или yarn
-- Nginx
-- PM2 (или другой process manager)
-- SSL сертификат (Let's Encrypt)
-- Git доступ к репозиторию
+> Где именно крутится боевая копия сейчас (сервер, домен, способ запуска), в репозитории
+> не зафиксировано. Ниже описано то, что поддерживают файлы репозитория: запуск через
+> Docker Compose и запуск напрямую через PM2 за nginx. Перед первой выкладкой сверить с
+> тем, как сайт запущен на самом деле.
 
-## Шаг 1️⃣: Подготовка сервера
+## Переменные окружения
 
-```bash
-# Подключитесь к вашему VPS Aeza через SSH
-ssh root@your-aeza-server-ip
+Полный список того, что читает код (`grep -rn 'process.env' app lib scripts proxy.ts`):
 
-# Обновите систему
-apt update && apt upgrade -y
+| Переменная | Обязательна | Что делает | Где читается |
+|---|---|---|---|
+| `DATABASE_URL` | да | Строка подключения к PostgreSQL. Без неё сайт молча уходит на локальный снимок `public/cache/*.json`, а админка падает. | `lib/db.ts`, `lib/airtable.ts` |
+| `ADMIN_PASSWORD` | да | Пароль входа в `/admin`. Если не задан, действует зашитый по умолчанию `cosmos2026` - на боевом сервере это равносильно открытой админке. | `proxy.ts`, `app/api/admin/login/route.ts` |
+| `MINIO_ENDPOINT` | для загрузки картинок | Адрес MinIO, куда админка кладёт файлы. По умолчанию `http://127.0.0.1:9002`. | `lib/storage.ts` |
+| `MINIO_PUBLIC_URL` | для загрузки картинок | Публичный адрес того же хранилища - он попадает в `image_url`/`thumb_url` и отдаётся браузеру. Если не задан, берётся `MINIO_ENDPOINT`, и в базу запишется внутренний адрес, недоступный снаружи. | `lib/storage.ts` |
+| `MINIO_ACCESS_KEY` | для загрузки картинок | Ключ доступа. | `lib/storage.ts` |
+| `MINIO_SECRET_KEY` | для загрузки картинок | Секретный ключ. | `lib/storage.ts` |
+| `NODE_ENV=production` | да | Обычный признак боевого режима. | Next.js |
 
-# Установите Node.js (версия 20)
-curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
-apt install -y nodejs npm
+Пример `.env.production` (файл в `.gitignore`, в репозиторий не попадает):
 
-# Установите Git
-apt install -y git
-
-# Установите Nginx
-apt install -y nginx
-
-# Установите PM2 глобально
-npm install -g pm2
-
-# Установите certbot для SSL
-apt install -y certbot python3-certbot-nginx
 ```
-
-## Шаг 2️⃣: Клонирование репозитория
-
-```bash
-# Создайте директорию для приложения
-mkdir -p /home/cosmos-ecology
-cd /home/cosmos-ecology
-
-# Клонируйте репозиторий (замените на ваш GitHub URL)
-git clone https://github.com/your-username/cosmos-ecology.git .
-
-# Или используйте существующую папку
-# cd ~/Desktop/cosmos-ecology
-```
-
-## Шаг 3️⃣: Настройка переменных окружения
-
-```bash
-# Создайте файл .env.production
-nano /home/cosmos-ecology/.env.production
-```
-
-Добавьте ваши переменные Airtable:
-```
-AIRTABLE_TOKEN=patzr6mo9h7YmCP1r.209cf3d37103fb91d789a36cfea0cb482bd7117f03e489cf5b58520cc11eaaf6
-AIRTABLE_APP_ID=appEdqvnKWVkqZdv5
-AIRTABLE_TABLE_ID=tblyTMo0CHtEauLAD
+DATABASE_URL=postgresql://ПОЛЬЗОВАТЕЛЬ:ПАРОЛЬ@ХОСТ:5432/cosmos_ecology
+ADMIN_PASSWORD=<длинный случайный пароль, не cosmos2026>
+MINIO_ENDPOINT=http://127.0.0.1:9002
+MINIO_PUBLIC_URL=https://media.185-125-103-160.sslip.io
+MINIO_ACCESS_KEY=<ключ>
+MINIO_SECRET_KEY=<ключ>
 NODE_ENV=production
 ```
 
-Сохраните: `Ctrl+O`, `Enter`, `Ctrl+X`
+Значения ключей и пароля брать из хранилища секретов сервера, а не из этого файла. Ни
+один реальный ключ в git не кладём - ни в документацию, ни в примеры.
 
-## Шаг 4️⃣: Установка зависимостей и сборка
+Устаревшее: `AIRTABLE_TOKEN`, `AIRTABLE_APP_ID`, `AIRTABLE_TABLE_ID` больше не нужны.
+Их читает единственный скрипт `scripts/export-airtable.js` - разовая выгрузка из
+Airtable, оставленная как след переезда. К работе сайта отношения не имеет.
+
+## Подготовка базы
+
+```bash
+# Создать таблицы
+psql "$DATABASE_URL" -f scripts/schema.sql
+
+# Разово залить работы из снимка public/cache/artworks.json (пропускает существующие)
+DATABASE_URL="..." node scripts/import-csv.js
+```
+
+Две таблицы: `artworks` (в каталог попадают строки с `in_catalog = true`) и `events`
+(на сайт попадают строки с `published = true`).
+
+## Картинки
+
+Админка (`/api/admin/upload` → `lib/storage.ts`) кладёт файл в MinIO в бакет
+`cosmos-ecology`: оригинал в `originals/`, превью 400px в `thumbs/`. Оба объекта
+выкладываются с `public-read`, поэтому бакет должен разрешать публичное чтение.
+
+Важно: хост из `MINIO_PUBLIC_URL` обязан быть перечислен в `next.config.ts` в
+`images.remotePatterns`, иначе `next/image` откажется отдавать картинку. Сейчас там
+`media.185-125-103-160.sslip.io` и два старых домена Airtable. Меняем хранилище -
+правим `next.config.ts` в том же коммите.
+
+## Языки
+
+Семь языков (`i18n/config.ts`): ru, en, es, zh, fr, de, ja. Русский живёт по адресу без
+префикса, остальные - с префиксом (`/en`, `/ja`). Разводит их `proxy.ts`, он же
+закрывает `/admin`. Отдельной настройки на сервере это не требует, но при правке
+nginx нельзя перехватывать пути с языковыми префиксами - всё уходит в приложение.
+
+## Вариант 1: Docker Compose
 
 ```bash
 cd /home/cosmos-ecology
+git pull origin main
 
-# Установите зависимости
-npm ci
-
-# Собрите приложение для продакшна
-npm run build
-
-# Проверьте что сборка успешна
-ls -la .next/
+# .env.production по образцу выше должен лежать рядом с docker-compose.yml
+docker compose up -d --build
+docker compose logs -f nextjs
 ```
 
-## Шаг 5️⃣: Запуск с PM2
+`docker-compose.yml` поднимает два контейнера: приложение на 3000 и nginx на 80/443 с
+конфигом из `nginx.conf` и сертификатами из `/etc/letsencrypt`.
+
+Осторожно с `Dockerfile`: боевой образ собирается из `.next` и `public`, а
+`next.config.ts` в него не копируется. Пока настройки картинок живут в этом файле,
+образ отдаёт картинки не так, как локальная сборка. Перед переходом на Docker это надо
+поправить (или перейти на `output: 'standalone'`).
+
+## Вариант 2: PM2 за nginx
 
 ```bash
-# Запустите приложение
-pm2 start npm --name "cosmos-ecology" -- start
+cd /home/cosmos-ecology
+git pull origin main
+npm ci
+npm run build
 
-# Убедитесь что оно запустилось
-pm2 status
-
-# Сделайте его автозагружаемым при перезагрузке
-pm2 startup
+pm2 restart cosmos-ecology || pm2 start npm --name cosmos-ecology -- start
 pm2 save
 ```
 
-## Шаг 6️⃣: Настройка Nginx
+Ровно это и делает `deploy.sh` (в нём прописан путь `/home/cosmos-ecology`; домен и порт
+в переменных скрипта - декоративные, нигде дальше не используются).
+
+Первичная настройка сервера:
 
 ```bash
-# Скопируйте конфиг Nginx (если вы его создали)
-cp /home/cosmos-ecology/nginx.conf /etc/nginx/sites-available/cosmos-ecology
+curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
+apt install -y nodejs git nginx certbot python3-certbot-nginx
+npm install -g pm2
 
-# Создайте символическую ссылку
+cp nginx.conf /etc/nginx/sites-available/cosmos-ecology
 ln -s /etc/nginx/sites-available/cosmos-ecology /etc/nginx/sites-enabled/
+# заменить your-domain.com на реальный домен и указать пути к сертификатам
+nginx -t && systemctl reload nginx
 
-# Отредактируйте конфиг - замените your-domain.com на ваш домен
-nano /etc/nginx/sites-available/cosmos-ecology
+certbot certonly --nginx -d ДОМЕН -d www.ДОМЕН
+systemctl enable --now certbot.timer
+
+pm2 startup && pm2 save
 ```
 
-Убедитесь что в конфиге правильно указаны:
-- `server_name your-domain.com www.your-domain.com;`
-- Пути к SSL сертификатам
+`nginx.conf` в репозитории - заготовка: в нём остались `your-domain.com` и пути к
+сертификатам вида `/etc/ssl/certs/your-domain.com.crt`. Как есть он не заработает.
+
+## Проверка после выкладки
 
 ```bash
-# Проверьте синтаксис Nginx
-nginx -t
-
-# Перезагрузите Nginx
-systemctl reload nginx
+pm2 status                      # или docker compose ps
+curl -I http://localhost:3000/  # приложение отвечает
+curl -I https://ДОМЕН/          # проходит через nginx и TLS
+curl -I https://ДОМЕН/en        # языковая ветка жива
 ```
 
-## Шаг 7️⃣: SSL сертификат (Let's Encrypt)
+Дальше глазами: открывается галерея (значит, база доступна - иначе показался бы снимок
+из `public/cache`), открывается `/admin` и просит пароль, картинка в карточке работы
+грузится с публичного адреса MinIO.
+
+## Обслуживание
 
 ```bash
-# Получите бесплатный SSL сертификат
-certbot certonly --nginx -d your-domain.com -d www.your-domain.com
-
-# Автоматическое обновление
-systemctl enable certbot.timer
-systemctl start certbot.timer
-
-# Проверьте что сертификат работает
-certbot renew --dry-run
+pm2 logs cosmos-ecology         # логи приложения
+pm2 restart cosmos-ecology      # перезапуск
+docker compose logs -f nextjs   # то же для Docker-варианта
+systemctl reload nginx          # перечитать конфиг веб-сервера
 ```
 
-## Шаг 8️⃣: Проверка
+## Безопасность
 
-```bash
-# Проверьте статус приложения
-pm2 status
+- Секреты живут только в `.env.production` на сервере. В git - ни ключей, ни паролей,
+  ни токенов, ни примеров с реальными значениями. Репозиторий публичный.
+- `ADMIN_PASSWORD` задавать обязательно: значение по умолчанию `cosmos2026` зашито в код
+  и известно всем, у кого есть доступ к исходникам, то есть кому угодно.
+- Наружу открыты только 22, 80 и 443 (`ufw`). PostgreSQL и MinIO - не наружу.
+- Утёкший ключ лечится отзывом в личном кабинете сервиса, а не удалением строки из
+  файла: в истории git он остаётся.
 
-# Смотрите логи
-pm2 logs cosmos-ecology
+## Если что-то не работает
 
-# Проверьте порт 3000
-netstat -tlnp | grep 3000
+**Сайт поднялся, но галерея пустая или показывает старое.** Приложение не достучалось
+до базы и ушло на снимок `public/cache/artworks.json`. Проверить `DATABASE_URL` и
+доступность PostgreSQL с машины приложения, в логах искать `DB fetch failed`.
 
-# Проверьте Nginx
-curl -I http://localhost/
-```
+**В админку пускает без пароля или не пускает с правильным.** Переменная
+`ADMIN_PASSWORD` не доехала до процесса. При PM2 после правки `.env.production` нужен
+`pm2 restart --update-env`, иначе процесс держит старое окружение.
 
-## 🎉 Готово!
+**Картинка загрузилась, но не показывается.** Либо в базу записан внутренний адрес
+(не задан `MINIO_PUBLIC_URL`), либо хост не перечислен в `images.remotePatterns` в
+`next.config.ts`, либо бакет не отдаёт объекты анонимно.
 
-Ваше приложение должно быть доступно по адресу:
-- 🌐 https://your-domain.com
-
-## 📝 Полезные команды
-
-```bash
-# Просмотр логов приложения
-pm2 logs cosmos-ecology
-
-# Перезапуск приложения
-pm2 restart cosmos-ecology
-
-# Остановка приложения
-pm2 stop cosmos-ecology
-
-# Удаление из PM2
-pm2 delete cosmos-ecology
-
-# Проверка версии Node.js на сервере
-node --version
-npm --version
-
-# Переблокировка Nginx конфига
-systemctl reload nginx
-
-# Просмотр открытых портов
-netstat -tlnp
-```
-
-## 🔧 Автоматическое обновление
-
-Для автоматического развертывания при коммите в GitHub создайте GitHub Action (опционально):
-
-```yaml
-# .github/workflows/deploy.yml
-name: Deploy to Aeza
-
-on:
-  push:
-    branches: [main]
-
-jobs:
-  deploy:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - name: Deploy to server
-        run: |
-          mkdir -p ~/.ssh
-          echo "${{ secrets.DEPLOY_KEY }}" > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
-          ssh -i ~/.ssh/id_rsa root@your-aeza-server-ip 'cd /home/cosmos-ecology && bash deploy.sh'
-```
-
-## ⚠️ Безопасность
-
-- 🔐 Не публикуйте `.env.production` в GitHub
-- 🔐 Используйте Strong пароли
-- 🔐 Включите firewall: `ufw enable`
-- 🔐 Откройте только нужные порты (80, 443, 22)
-- 🔐 Регулярно обновляйте систему: `apt update && apt upgrade`
-
-## 🆘 Решение проблем
-
-**Приложение не запускается:**
-```bash
-npm run build  # Проверьте что сборка работает
-pm2 logs cosmos-ecology  # Посмотрите логи ошибок
-```
-
-**Nginx не работает:**
-```bash
-nginx -t  # Проверьте синтаксис конфига
-systemctl status nginx  # Посмотрите статус
-```
-
-**Проблемы с Airtable:**
-- Проверьте что `.env.production` содержит правильные значения
-- Убедитесь что сервер имеет доступ в интернет
-- Проверьте токены Airtable на странице разработчика
-
----
-
-✅ Если всё работает - ваш сайт экологии космоса в сети! 🚀
+**Сборка падает.** `npm run build` локально на той же версии Node, что и на сервере.

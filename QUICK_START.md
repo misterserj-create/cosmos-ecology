@@ -53,7 +53,7 @@ echo "✅ Готово! Переходим к шагу 3..."'
 
 # 3. Создайте .env.production файл:
 cat > /home/cosmos-ecology/.env.production << EOF
-AIRTABLE_TOKEN=patzr6mo9h7YmCP1r.209cf3d37103fb91d789a36cfea0cb482bd7117f03e489cf5b58520cc11eaaf6
+AIRTABLE_TOKEN=<токен отозван, Airtable из проекта выведен>
 AIRTABLE_APP_ID=appEdqvnKWVkqZdv5
 AIRTABLE_TABLE_ID=tblyTMo0CHtEauLAD
 NODE_ENV=production
@@ -88,7 +88,7 @@ git clone https://github.com/YOUR_USERNAME/cosmos-ecology.git .
 
 # .env файл
 cat > .env.production << EOF
-AIRTABLE_TOKEN=patzr6mo9h7YmCP1r.209cf3d37103fb91d789a36cfea0cb482bd7117f03e489cf5b58520cc11eaaf6
+AIRTABLE_TOKEN=<токен отозван, Airtable из проекта выведен>
 AIRTABLE_APP_ID=appEdqvnKWVkqZdv5
 AIRTABLE_TABLE_ID=tblyTMo0CHtEauLAD
 NODE_ENV=production

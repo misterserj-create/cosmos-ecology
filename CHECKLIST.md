@@ -67,7 +67,7 @@ IP сервера Aeza: ___________________________
 SSH пользователь: ___________________________
 SSH пароль/ключ: ___________________________
 
-Airtable Token: patzr6mo9h7YmCP1r.209cf3d37103fb91d789a36cfea0cb482bd7117f03e489cf5b58520cc11eaaf6
+Airtable Token: <токен отозван, Airtable из проекта выведен>
 Airtable App ID: appEdqvnKWVkqZdv5
 Airtable Table ID: tblyTMo0CHtEauLAD
 

@@ -8,11 +8,12 @@ services:
     container_name: cosmos-ecology
     ports:
       - "3000:3000"
+    # DATABASE_URL, ADMIN_PASSWORD и ключи MINIO_* берутся из .env.production
+    # рядом с этим файлом. Список переменных - в DEPLOY.md.
+    env_file:
+      - .env.production
     environment:
       - NODE_ENV=production
-      - AIRTABLE_TOKEN=${AIRTABLE_TOKEN}
-      - AIRTABLE_APP_ID=${AIRTABLE_APP_ID}
-      - AIRTABLE_TABLE_ID=${AIRTABLE_TABLE_ID}
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:3000"]
