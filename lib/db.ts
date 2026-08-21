@@ -1,4 +1,10 @@
-import { Pool } from 'pg'
+import { Pool, types } from 'pg'
+
+// Колонки типа DATE отдаём как строку «ГГГГ-ММ-ДД», а не как объект Date.
+// Иначе драйвер собирает Date на локальную полночь, и дальше любое
+// приведение к строке (String(), JSON.stringify(), toISOString()) либо
+// портит формат, либо сдвигает день на сутки в поясах с плюсовым смещением.
+types.setTypeParser(1082, (v: string) => v)
 
 let pool: Pool | null = null
 

@@ -105,6 +105,22 @@ export interface Event {
   imageUrl: string
 }
 
+// Дату приводим к «ГГГГ-ММ-ДД». Из PostgreSQL приходит либо строка (см.
+// setTypeParser в lib/db.ts), либо объект Date, если парсер обойдён. У Date
+// берём локальные поля, а не toISOString(): в поясе GMT+3 полночь 15 апреля
+// в UTC это ещё 14-е, и день уехал бы на сутки назад.
+function toIsoDate(value: unknown): string {
+  if (!value) return ''
+  if (value instanceof Date) {
+    if (Number.isNaN(value.getTime())) return ''
+    const y = value.getFullYear()
+    const m = String(value.getMonth() + 1).padStart(2, '0')
+    const d = String(value.getDate()).padStart(2, '0')
+    return `${y}-${m}-${d}`
+  }
+  return String(value).slice(0, 10)
+}
+
 function parseEventRecord(rec: any): Event {
   const f = rec.fields
   const imgs = f['Фото'] || []
@@ -130,7 +146,7 @@ export async function fetchEvents(): Promise<Event[]> {
         id: String(r.id),
         title: String(r.title || ''),
         type: String(r.type || ''),
-        date: r.event_date ? String(r.event_date).slice(0, 10) : '',
+        date: toIsoDate(r.event_date),
         place: String(r.place || ''),
         description: String(r.description || ''),
         link: String(r.link || ''),
