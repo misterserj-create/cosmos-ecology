@@ -1,6 +1,6 @@
 import type { Metadata } from "next"
 import { notFound } from "next/navigation"
-import { PT_Sans_Narrow, Inter, Noto_Sans_SC, Noto_Sans_JP } from "next/font/google"
+import { PT_Sans_Narrow, Inter } from "next/font/google"
 import "../../globals.css"
 import { SITE_URL, SITE_NAME, buildJsonLd } from "@/lib/site"
 import {
@@ -26,21 +26,20 @@ const inter = Inter({
   weight: ["300", "400"],
 })
 
-// В PT Sans Narrow и Inter нет иероглифов и каны: на китайской и японской
-// версиях браузер подставил бы что попало. Оба Noto подключаются только на
-// своём языке и без preload - шрифты CJK весят слишком много, чтобы тянуть
-// их вперёд остальной страницы.
-const notoSC = Noto_Sans_SC({
-  variable: "--font-cjk",
-  weight: ["400", "700"],
-  preload: false,
-})
-
-const notoJP = Noto_Sans_JP({
-  variable: "--font-cjk",
-  weight: ["400", "700"],
-  preload: false,
-})
+// В PT Sans Narrow и Inter нет иероглифов и каны. Сначала здесь стояли
+// Noto Sans SC и JP из next/font/google, но это оказалось плохой опорой:
+// у Noto SC сотни файлов-подмножеств, и сборка целиком зависела от того,
+// ответит ли fonts.gstatic.com. Один сбой сети - и сборка падает, в том
+// числе на сервере при выкладке.
+//
+// Собственные шрифты не нужны: на китайском и японском устройстве системный
+// шрифт (PingFang, Hiragino, Noto, Microsoft YaHei) заведомо есть и выглядит
+// привычнее любого подставленного. Браузер подставляет его по глифам сам -
+// нужно только назвать его в списке после фирменных.
+const CJK_STACK =
+  '"PingFang SC", "Hiragino Sans", "Hiragino Kaku Gothic ProN", ' +
+  '"Noto Sans CJK SC", "Noto Sans SC", "Noto Sans JP", ' +
+  '"Microsoft YaHei", "Yu Gothic", "Meiryo", sans-serif'
 
 export function generateStaticParams() {
   return locales.map(lang => ({ lang }))
@@ -95,24 +94,22 @@ export default async function SiteLayout({
   if (!isLocale(lang)) notFound()
   const locale: Locale = lang
 
-  const cjk = locale === "zh" ? notoSC : locale === "ja" ? notoJP : null
-  const classes = [condensed.variable, inter.variable, cjk?.variable]
-    .filter(Boolean)
-    .join(" ")
+  const cjk = locale === "zh" || locale === "ja"
+  const classes = [condensed.variable, inter.variable].join(" ")
 
   return (
     <html
       lang={htmlLang[locale]}
       className={classes}
-      // Noto подставляется вторым в списке: латиница и кириллица остаются в
-      // фирменных PT Sans Narrow и Inter, а иероглифы и кана, которых в них
-      // нет, подхватываются из Noto по глифам. Правим переменные шрифтов, а
-      // не каждый компонент по отдельности.
+      // Системный шрифт CJK идёт вторым в списке: латиница и кириллица
+      // остаются в фирменных PT Sans Narrow и Inter, а иероглифы и кана,
+      // которых в них нет, подхватываются по глифам. Правим переменные
+      // шрифтов, а не каждый компонент по отдельности.
       style={
         cjk
           ? ({
-              "--font-display": "var(--font-condensed), var(--font-cjk), sans-serif",
-              "--font-body": "var(--font-inter), var(--font-cjk), sans-serif",
+              "--font-display": `var(--font-condensed), ${CJK_STACK}`,
+              "--font-body": `var(--font-inter), ${CJK_STACK}`,
             } as React.CSSProperties)
           : undefined
       }

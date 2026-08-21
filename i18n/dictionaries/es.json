@@ -1,265 +1,265 @@
 {
   "meta": {
-    "title": "Экология Космоса 2026",
-    "description": "Выставочный проект об орбитальном мусоре и втором рождении материи. К 65-летию полёта Юрия Гагарина. Москва, весна 2026.",
-    "ogImageAlt": "Земля с низкой орбиты, вокруг обломки космического мусора"
+    "title": "Ecología del Cosmos 2026",
+    "description": "Proyecto expositivo sobre la basura orbital y el segundo nacimiento de la materia. Por el 65 aniversario del vuelo de Yuri Gagarin. Moscú, primavera de 2026.",
+    "ogImageAlt": "La Tierra vista desde la órbita baja, rodeada de fragmentos de basura espacial"
   },
   "nav": {
-    "brand": "Экология Космоса",
+    "brand": "Ecología del Cosmos",
     "links": {
-      "venues": "Площадки",
-      "about": "О проекте",
-      "gallery": "Галерея",
-      "team": "Команда",
-      "partners": "Партнёры",
-      "events": "События",
-      "history": "История"
+      "venues": "Sedes",
+      "about": "Proyecto",
+      "gallery": "Galería",
+      "team": "Equipo",
+      "partners": "Socios",
+      "events": "Eventos",
+      "history": "Historia"
     },
-    "language": "Язык",
-    "menu": "Меню"
+    "language": "Idioma",
+    "menu": "Menú"
   },
   "hero": {
-    "kicker": "Выставочный проект · 2026",
-    "titleTop": "Космос больше",
-    "titleBottom": "не пустота",
-    "lead": "Выставочный проект об орбитальном мусоре и втором рождении материи. К 65-летию полёта Юрия Гагарина. Москва, весна 2026",
-    "cta": "Смотреть галерею",
-    "dive": "Погрузиться к Земле"
+    "kicker": "Proyecto expositivo · 2026",
+    "titleTop": "El espacio ya no",
+    "titleBottom": "es un vacío",
+    "lead": "Proyecto expositivo sobre la basura orbital y el segundo nacimiento de la materia. Por el 65 aniversario del vuelo de Yuri Gagarin. Moscú, primavera de 2026",
+    "cta": "Ver la galería",
+    "dive": "Descender hacia la Tierra"
   },
   "venues": {
-    "label": "Площадки",
-    "now": "Идёт сейчас",
-    "siteLink": "Сайт музея →",
+    "label": "Sedes",
+    "now": "En curso",
+    "siteLink": "Web del museo →",
     "items": {
       "pechatniki": {
-        "name": "Галерея «Печатники»",
-        "dates": "6 марта – 19 апреля",
-        "address": "Москва, ул. Батюнинская, 14",
+        "name": "Galería Pechatniki",
+        "dates": "6 de marzo – 19 de abril",
+        "address": "Moscú, calle Batyuninskaya, 14",
         "note": ""
       },
       "sputnik": {
-        "name": "Музей «Спутник»",
-        "dates": "15 марта – 15 июня",
-        "address": "Москва, 2-я Рыбинская, 21, стр. 1",
-        "note": "Вход по билетам музея. Расписание и билеты - на сайте «Спутника»."
+        "name": "Museo Sputnik",
+        "dates": "15 de marzo – 31 de diciembre",
+        "address": "Moscú, 2.ª calle Rybinskaya, 21, edificio 1",
+        "note": "La exposición se ha prolongado hasta final de año. Acceso con la entrada del museo; horarios y entradas en la web del Museo Sputnik."
       },
       "artspace": {
-        "name": "Галерея «ART SPACE»",
-        "dates": "10 – 19 апреля",
-        "address": "Москва, Тверская, 9",
+        "name": "Galería ART SPACE",
+        "dates": "10 – 19 de abril",
+        "address": "Moscú, calle Tverskaya, 9",
         "note": ""
       },
       "vks": {
-        "name": "Офицерский клуб ВКС",
-        "dates": "10 – 19 апреля",
-        "address": "Москва, Павловская ул., 8",
+        "name": "Club de Oficiales de las Fuerzas Aeroespaciales",
+        "dates": "10 – 19 de abril",
+        "address": "Moscú, calle Pavlovskaya, 8",
         "note": ""
       }
     }
   },
   "about": {
-    "label": "О проекте",
-    "manifesto": "Мы привыкли думать, что там пустота. Чистый лист. Но пустота обрела плотность: она заполнена нашим присутствием, нашими амбициями, нашим холодным металлом.",
-    "statsHint": "Нажмите (i) на карточке – источник и дата. У массы мусора можно кликнуть по числу – сравнение для масштаба.",
-    "p1": "Мусор на земле и мусор на орбите – одна и та же субстанция. Единый индустриальный след, который мы сначала вырвали из недр планеты, а затем забросили над своими головами.",
-    "p2": "Космос забрал себе лучшее: чистый металл ушёл в обшивку ракет и электронику спутников. Внизу остались горы шлака, которые мы привыкли игнорировать. Я возвращаю этой материи право быть искусством. Этот метод называется артсайклинг: сгоревшие платы, вакуумные лампы, тумблеры великой эпохи очищаются от слоёв времени и пересобираются в новые смыслы.",
-    "p3": "Горы мусора на орбите – вызов нашему интеллекту и духу. Мы уже полноправные и ответственные жители Вселенной. Пора вести себя соответственно."
+    "label": "Sobre el proyecto",
+    "manifesto": "Estamos acostumbrados a pensar que allí arriba hay vacío. Una página en blanco. Pero el vacío ha adquirido densidad: está lleno de nuestra presencia, de nuestras ambiciones, de nuestro metal frío.",
+    "statsHint": "Pulse la (i) de una tarjeta para ver la fuente y la fecha. En la masa de basura puede pulsar la cifra: aparece una comparación que da idea de la escala.",
+    "p1": "La basura en la tierra y la basura en órbita son una misma sustancia. Una única huella industrial que primero arrancamos de las entrañas del planeta y después lanzamos por encima de nuestras cabezas.",
+    "p2": "El cosmos se quedó con lo mejor: el metal limpio fue a parar al revestimiento de los cohetes y a la electrónica de los satélites. Abajo quedaron montañas de escoria que nos acostumbramos a ignorar. Yo le devuelvo a esa materia el derecho a ser arte. Este método se llama artcycling: placas quemadas, válvulas de vacío e interruptores de una gran época se limpian de las capas del tiempo y se recomponen en nuevos significados.",
+    "p3": "Las montañas de basura en órbita son un desafío a nuestro intelecto y a nuestro espíritu. Ya somos habitantes de pleno derecho y responsables del Universo. Es hora de comportarnos como tales."
   },
   "stat": {
-    "sourceButton": "Источник данных",
-    "asOfPrefix": "по данным на",
-    "sourceLink": "первоисточник →",
-    "millions": "млн"
+    "sourceButton": "Fuente de los datos",
+    "asOfPrefix": "datos a fecha de",
+    "sourceLink": "fuente original →",
+    "millions": "millones"
   },
   "telemetry": {
     "objects": {
-      "label": "каталогизированных объектов на орбите",
-      "asOf": "31 июля 2026",
-      "trend": "NASA оценивала около 25 000 в 2022"
+      "label": "objetos catalogados en órbita",
+      "asOf": "31 de julio de 2026",
+      "trend": "la NASA estimaba unos 25 000 en 2022"
     },
     "fragments": {
-      "label": "фрагментов крупнее сантиметра (оценка)",
-      "asOf": "август 2024"
+      "label": "fragmentos de más de un centímetro (estimación)",
+      "asOf": "agosto de 2024"
     },
     "mass": {
-      "label": "суммарная масса металла на орбите",
-      "suffix": "+ т",
-      "asOf": "31 июля 2026",
-      "trend": "было ~9 000 т в январе 2022 (NASA)",
+      "label": "masa total de metal en órbita",
+      "suffix": "+ t",
+      "asOf": "31 de julio de 2026",
+      "trend": "eran ~9000 t en enero de 2022 (NASA)",
       "comparisons": [
         {
-          "label": "≈ голубых китов",
+          "label": "≈ ballenas azules",
           "value": "113"
         },
         {
-          "label": "≈ Эйфелевых башен",
+          "label": "≈ torres Eiffel",
           "value": "1,7"
         }
       ]
     },
     "speed": {
-      "label": "скорость обломка на низкой орбите",
-      "value": "7–8 км/с",
-      "asOf": "физическая константа орбиты"
+      "label": "velocidad de un fragmento en órbita baja",
+      "value": "7–8 km/s",
+      "asOf": "cualquier día – es una constante física"
     },
     "launches": {
-      "label": "спутников выведено на орбиту в 2025 году",
-      "asOf": "итоги 2025 года",
-      "trend": "+54% к 2024 году – мегасозвездия ускоряют темп"
+      "label": "satélites puestos en órbita en 2025",
+      "asOf": "finales de 2025",
+      "trend": "+54 % respecto a 2024 – las megaconstelaciones aceleran el ritmo"
     }
   },
   "gallery": {
-    "label": "Галерея работ",
+    "label": "Galería de obras",
     "authors": {
-      "all": "Все",
-      "kozhukhovsky": "Сергей Кожуховский",
-      "kozyr": "Елизавета Козырь",
-      "kokoreva": "Татьяна Кокорева"
+      "all": "Todos",
+      "kozhukhovsky": "Sergey Kozhukhovsky",
+      "kozyr": "Elizaveta Kozyr",
+      "kokoreva": "Tatiana Kokoreva"
     },
-    "noPhoto": "нет фото",
-    "arrowsHint": "← / → между работами",
-    "close": "Закрыть"
+    "noPhoto": "sin foto",
+    "arrowsHint": "← / → entre obras",
+    "close": "Cerrar"
   },
   "team": {
-    "label": "Участники",
+    "label": "Participantes",
     "members": [
       {
-        "name": "Сергей Кожуховский",
-        "role": "Экохудожник, автор идеи",
-        "desc": "Финалист премии президентской платформы «Россия – страна возможностей». Трансформирует техногенные отходы в художественные образы."
+        "name": "Sergey Kozhukhovsky",
+        "role": "Ecoartista, autor de la idea",
+        "desc": "Finalista del premio de la plataforma presidencial «Rusia, país de oportunidades». Transforma los residuos tecnológicos en imágenes artísticas."
       },
       {
-        "name": "Елизавета Козырь",
-        "role": "Художник-монументалист",
-        "desc": "Реставратор, участвовала в восстановлении святынь храма Воскресения Христова в Иерусалиме."
+        "name": "Elizaveta Kozyr",
+        "role": "Artista monumentalista",
+        "desc": "Restauradora, participó en la recuperación de las reliquias de la iglesia de la Resurrección de Jerusalén."
       },
       {
-        "name": "Татьяна Кокорева",
-        "role": "Оперная певица, мастер прикладного искусства",
-        "desc": "Работает с материей небесных тел."
+        "name": "Tatiana Kokoreva",
+        "role": "Cantante de ópera, maestra de artes aplicadas",
+        "desc": "Trabaja con la materia de los cuerpos celestes."
       },
       {
-        "name": "Варвара Хазова",
-        "role": "Видеохудожник",
-        "desc": "Автор документального исследования «Космический мусор»."
+        "name": "Varvara Khazova",
+        "role": "Videoartista",
+        "desc": "Autora del estudio documental «Basura espacial»."
       },
       {
-        "name": "Татьяна Фатеева",
-        "role": "Фотограф и медиахудожник",
-        "desc": "Запечатлела красоту соприкосновения человека и звёзд."
+        "name": "Tatiana Fateeva",
+        "role": "Fotógrafa y artista multimedia",
+        "desc": "Ha captado la belleza del encuentro entre el ser humano y las estrellas."
       },
       {
-        "name": "Элина Папас",
-        "role": "Исполнительный продюсер",
-        "desc": "Куратор Арт-клуба Сколково, выпускница бизнес-школы Сколково и Лондонской школы бизнеса. Магистр РАНХиГС, программа «Управление в арт-бизнесе»."
+        "name": "Elina Papas",
+        "role": "Productora ejecutiva",
+        "desc": "Comisaria del Club de Arte Skólkovo, egresada de la Escuela de Negocios de Skólkovo y de la London Business School. Máster por la RANEPA, programa «Gestión en el negocio del arte»."
       }
     ]
   },
   "partners": {
-    "label": "Партнёры",
+    "label": "Socios",
     "items": [
       {
-        "name": "Принцип НОВО",
-        "desc": "Стратегический партнер и со-архитектор среды"
+        "name": "Princip NOVO",
+        "desc": "Socio estratégico y coarquitecto del entorno"
       },
       {
         "name": "Platform.web-ar.studio",
-        "desc": "Технологический партнер, дополненная реальность"
+        "desc": "Socio tecnológico, realidad aumentada"
       },
       {
-        "name": "Арт-клуб «Сколково»",
-        "desc": "Президент: Ксения Макарчук"
+        "name": "Club de Arte Skólkovo",
+        "desc": "Presidenta: Ksenia Makarchuk"
       },
       {
-        "name": "«Фестиваль-строй»",
-        "desc": "Застройщик и организатор фестивалей"
+        "name": "Festival-Stroy",
+        "desc": "Constructor de exposiciones y organizador de festivales"
       },
       {
-        "name": "Коврижка Зарайская",
-        "desc": "Гастрономический бренд Зарайска"
+        "name": "Kovrizhka Zaraiskaya",
+        "desc": "Marca gastronómica de la ciudad de Zaraisk"
       },
       {
         "name": "Ecodao.ru",
-        "desc": "Главная афиша России в сфере устойчивого развития"
+        "desc": "La principal agenda de Rusia en desarrollo sostenible"
       },
       {
-        "name": "«айФлекс»",
-        "desc": "Российский разработчик, 20 лет на рынке"
+        "name": "iFlex",
+        "desc": "Desarrollador ruso de software, 20 años en el mercado"
       },
       {
-        "name": "Департамент культуры Москвы",
+        "name": "Departamento de Cultura de Moscú",
         "desc": ""
       }
     ]
   },
   "events": {
-    "label": "Мероприятия и новости",
-    "more": "Подробнее →"
+    "label": "Actos y noticias",
+    "more": "Más información →"
   },
   "history": {
-    "label": "История проекта",
-    "intro": "«Экология космоса» выросла из слияния двух авторских взглядов на технологический след человечества.",
+    "label": "Historia del proyecto",
+    "intro": "«Ecología del Cosmos» nació de la confluencia de dos miradas de autor sobre la huella tecnológica de la humanidad.",
     "items": [
       {
         "year": "2018",
-        "text": "Монументальный художник Елизавета Козырь создала концептуальную серию работ, заложив визуальный фундамент темы."
+        "text": "La artista monumentalista Elizaveta Kozyr creó una serie conceptual de obras que sentó la base visual del tema."
       },
       {
         "year": "2021",
-        "text": "Сергей Кожуховский, работая в ППК РЭО, создал первые объекты из электронных компонентов и дал проекту официальное название."
+        "text": "Sergey Kozhukhovsky, mientras trabajaba en el Operador Ecológico Ruso, creó los primeros objetos con componentes electrónicos y dio al proyecto su nombre oficial."
       },
       {
         "year": "2022",
-        "text": "«Экология космоса» вышла в публичное пространство. Осенью проект представлен в инновационном центре «Ренова Лаб»."
+        "text": "«Ecología del Cosmos» salió al espacio público. En otoño el proyecto se presentó en el centro de innovación Renova Lab."
       },
       {
         "year": "2023",
-        "text": "Ключевая выставка в Калуге, в ГМИК им. К. Э. Циолковского. В рамках «Экософии» экспозиция прошла в Архангельске, Тюмени, Санкт-Петербурге, Нижнем Новгороде, Екатеринбурге и Челябинске."
+        "text": "Exposición clave en Kaluga, en el Museo Estatal de Historia de la Cosmonáutica K. E. Tsiolkovski. Dentro de «Ecosofía», la muestra pasó por Arjánguelsk, Tiumén, San Petersburgo, Nizhni Nóvgorod, Ekaterimburgo y Cheliábinsk."
       },
       {
         "year": "2026",
-        "text": "Трансформируя промышленную археологию в искусство будущего, проект продолжает масштабировать смыслы на стыке экологии и космонавтики."
+        "text": "Transformando la arqueología industrial en arte del futuro, el proyecto sigue ampliando sus significados en el cruce entre la ecología y la cosmonáutica."
       }
     ]
   },
   "thanks": {
-    "label": "Благодарности",
+    "label": "Agradecimientos",
     "items": [
       {
-        "name": "Мусс Павлу",
-        "title": "Генеральному директору «Принцип НОВО»",
-        "text": "За многолетнюю стратегическую поддержку проектов арт-группы «Осознанность» и личное участие в развитии нашей экосистемы."
+        "name": "Pavel Muss",
+        "title": "Director general de Princip NOVO",
+        "text": "Por muchos años de apoyo estratégico a los proyectos del grupo artístico Osoznannost (Conciencia) y por su implicación personal en el desarrollo de nuestro ecosistema."
       },
       {
-        "name": "Макарчук Ксении",
-        "title": "Президенту Арт-клуба «Сколково»",
-        "text": "За всестороннюю помощь, мощный информационный ресурс и участие в проектах арт-группы «Осознанность»."
+        "name": "Ksenia Makarchuk",
+        "title": "Presidenta del Club de Arte Skólkovo",
+        "text": "Por su ayuda en todos los frentes, por un potente recurso informativo y por su participación en los proyectos del grupo artístico Osoznannost."
       },
       {
-        "name": "Волковой Елене",
-        "title": "Руководителю издательства «Русский мир медиа»",
-        "text": "За безупречную организацию выставочных циклов в «Ренова Лаб» и ГМИК им. К. Э. Циолковского."
+        "name": "Elena Volkova",
+        "title": "Directora de la editorial Russkiy Mir Media",
+        "text": "Por la organización impecable de los ciclos expositivos en Renova Lab y en el Museo Estatal de Historia de la Cosmonáutica K. E. Tsiolkovski."
       },
       {
-        "name": "Абакумовой Наталье",
-        "title": "Директору ГМИК им. К. Э. Циолковского",
-        "text": "За проведение выставки и высокую экспертную оценку, результатом которой стала передача части работ в фонды музея и Государственный каталог РФ."
+        "name": "Natalia Abakumova",
+        "title": "Directora del Museo Estatal de Historia de la Cosmonáutica K. E. Tsiolkovski",
+        "text": "Por acoger la exposición y por una valoración experta tan alta que llevó a incorporar parte de las obras a los fondos del museo y al Catálogo Estatal de la Federación de Rusia."
       },
       {
-        "name": "Щербакову Денису",
-        "title": "Основателю «Фестиваль-Строй»",
-        "text": "За профессиональную застройку экспозиций, предоставление выставочной инфраструктуры и активное партнёрство с 2022 года."
+        "name": "Denis Shcherbakov",
+        "title": "Fundador de Festival-Stroy",
+        "text": "Por el montaje profesional de las exposiciones, por facilitar la infraestructura expositiva y por una colaboración activa desde 2022."
       },
       {
-        "name": "Беляеву Андрею",
-        "title": "Генеральному директору «Айфлекс»",
-        "text": "За надёжное партнёрство, проверенное годами, и неизменную поддержку наших инициатив."
+        "name": "Andrey Belyaev",
+        "title": "Director general de iFlex",
+        "text": "Por una colaboración fiable, probada con los años, y por el apoyo constante a nuestras iniciativas."
       }
     ]
   },
   "footer": {
-    "brand": "Экология Космоса 2026",
-    "cities": "Москва · Санкт-Петербург",
-    "credit": "разработка notevibe"
+    "brand": "Ecología del Cosmos 2026",
+    "cities": "Moscú · San Petersburgo",
+    "credit": "desarrollo notevibe"
   }
 }
