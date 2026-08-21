@@ -2,7 +2,6 @@
 
 import { useMemo, useRef } from "react"
 import { Canvas, useFrame, useLoader } from "@react-three/fiber"
-import { Html } from "@react-three/drei"
 import * as THREE from "three"
 
 const DEBRIS_COUNT_FULL = 2000
@@ -55,59 +54,37 @@ function latLonToVec(lat: number, lon: number, r: number) {
   )
 }
 
-function CityMarker({ name, lat, lon }: { name: string; lat: number; lon: number }) {
+function CityMarker({ lat, lon }: { lat: number; lon: number }) {
   const groupRef = useRef<THREE.Group>(null)
-  const labelRef = useRef<HTMLDivElement>(null)
   const worldPos = useMemo(() => new THREE.Vector3(), [])
 
-  const { position, quaternion } = useMemo(() => {
-    const dir = latLonToVec(lat, lon, 1)
-    const q = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir)
-    return { position: dir.clone().multiplyScalar(1.001), quaternion: q }
-  }, [lat, lon])
+  const position = useMemo(
+    () => latLonToVec(lat, lon, 1).multiplyScalar(1.002),
+    [lat, lon]
+  )
 
   useFrame(({ camera }) => {
     const g = groupRef.current
     if (!g) return
     g.getWorldPosition(worldPos)
-    // Центр планеты в мировых координатах — начало координат, поэтому нормаль
+    // Центр планеты в мировых координатах - начало координат, поэтому нормаль
     // поверхности в точке метки это сама её позиция.
-    const facing = worldPos.clone().normalize().dot(camera.position.clone().sub(worldPos).normalize())
-    // Гасим метку, пока она уходит за лимб, а не выключаем скачком.
-    const visible = Math.max(0, Math.min(1, (facing - 0.05) / 0.3))
-    g.visible = visible > 0.01
-    if (labelRef.current) labelRef.current.style.opacity = String(visible)
+    const facing = worldPos
+      .clone()
+      .normalize()
+      .dot(camera.position.clone().sub(worldPos).normalize())
+    // Прячем точку, когда она уходит за лимб.
+    g.visible = facing > 0.06
   })
 
+  // Только точка: подписи «Москва» и «Санкт-Петербург» на близкой камере
+  // налезали друг на друга - города рядом, а текст длинный.
   return (
-    <group ref={groupRef} position={position} quaternion={quaternion}>
-      <mesh position={[0, 0.004, 0]}>
-        <sphereGeometry args={[0.0045, 10, 10]} />
+    <group ref={groupRef} position={position}>
+      <mesh>
+        <sphereGeometry args={[0.0038, 10, 10]} />
         <meshBasicMaterial color="#f0c860" toneMapped={false} />
       </mesh>
-      {/* Тонкий штырёк вверх — метку видно даже поверх светлой поверхности. */}
-      <mesh position={[0, 0.021, 0]}>
-        <cylinderGeometry args={[0.0007, 0.0007, 0.034, 5]} />
-        <meshBasicMaterial color="#f0c860" transparent opacity={0.55} toneMapped={false} />
-      </mesh>
-      <Html position={[0, 0.05, 0]} center distanceFactor={1.5} zIndexRange={[2, 0]}>
-        <div
-          ref={labelRef}
-          style={{
-            fontFamily: "var(--font-body), system-ui, sans-serif",
-            fontSize: 11,
-            letterSpacing: "0.14em",
-            textTransform: "uppercase",
-            color: "#f0c860",
-            whiteSpace: "nowrap",
-            textShadow: "0 1px 6px rgba(0,0,0,0.9)",
-            pointerEvents: "none",
-            userSelect: "none",
-          }}
-        >
-          {name}
-        </div>
-      </Html>
     </group>
   )
 }
@@ -116,7 +93,7 @@ function CityMarkers() {
   return (
     <>
       {CITIES.map(c => (
-        <CityMarker key={c.name} {...c} />
+        <CityMarker key={c.name} lat={c.lat} lon={c.lon} />
       ))}
     </>
   )
