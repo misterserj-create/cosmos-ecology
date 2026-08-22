@@ -202,6 +202,69 @@ def publish_vk(text: str, group_id: str, image_url: str | None = None) -> dict[s
 # Прогон
 # ---------------------------------------------------------------------------
 
+# ---------------------------------------------------------------------------
+# Очередь автопубликации
+# ---------------------------------------------------------------------------
+
+def _now_local(tz_name: str) -> datetime:
+    try:
+        from zoneinfo import ZoneInfo
+        return datetime.now(ZoneInfo(tz_name))
+    except Exception:  # noqa: BLE001
+        return datetime.now(timezone.utc)
+
+
+def pick_for_slot(run: Run, conn, drafts: list[dict[str, Any]], pub: dict[str, Any]) -> list[dict[str, Any]]:
+    """Из очереди выбирает, что публиковать в этот прогон.
+
+    Слот открыт, если сегодня один из дней schedule.days и текущий час не
+    раньше schedule.hour (по schedule.tz). В слот уходит один пост - самый
+    ранний из тех, кто пролежал не меньше hold_hours. Если сегодня уже что-то
+    публиковалось - слот занят. Явно одобренные человеком (approved) идут
+    вне очереди, как и раньше.
+    """
+    sched = pub.get("schedule") or {}
+    days = [int(x) for x in (sched.get("days") or [1, 3, 5])]          # 1=пн ... 7=вс
+    hour = int(sched.get("hour", 11))
+    hold_hours = float(pub.get("hold_hours", 6))
+    tz_name = sched.get("tz") or "Europe/Moscow"
+    now = _now_local(tz_name)
+
+    approved = [d for d in drafts if d["status"] == "approved"]
+    queued = [d for d in drafts if d["status"] == "review"]
+
+    if now.isoweekday() not in days or now.hour < hour:
+        run.log("очередь: слот закрыт (%s %02d:%02d, дни %s, час %s), в очереди %s",
+                now.strftime("%a"), now.hour, now.minute, days, hour, len(queued))
+        return approved
+
+    with conn.cursor() as cur:
+        cur.execute("""SELECT count(*) AS n FROM pipe_drafts
+                        WHERE lang='ru' AND status='published'
+                          AND published_at >= (now() AT TIME ZONE %s)::date""", (tz_name,))
+        row = cur.fetchone()
+        today = (row["n"] if isinstance(row, dict) else row[0]) if row else 0
+    if today:
+        run.log("очередь: сегодня уже опубликовано %s, слот занят; в очереди %s", today, len(queued))
+        return approved
+
+    ready = []
+    for d in queued:
+        created = d.get("created_at")
+        if created is None:
+            ready.append(d); continue
+        if created.tzinfo is None:
+            created = created.replace(tzinfo=timezone.utc)
+        age_h = (datetime.now(timezone.utc) - created.astimezone(timezone.utc)).total_seconds() / 3600
+        if age_h >= hold_hours:
+            ready.append(d)
+    ready.sort(key=lambda d: (d.get("created_at") or datetime.min.replace(tzinfo=timezone.utc), d["id"]))
+    chosen = ready[:1]
+    run.log("очередь: слот открыт, выдержали %s ч: %s из %s, берём %s",
+            hold_hours, len(ready), len(queued), [d["id"] for d in chosen])
+    return approved + chosen
+
+
 def prepare_text(body: str, signature: str) -> str:
     text = (body or "").strip()
     if signature:
@@ -224,7 +287,17 @@ def main() -> None:
         if not channels:
             run.log("каналы не настроены (pipe_settings.publish), нечего делать")
             return
-        statuses = ("approved",) if pub.get("mode") != "auto" else ("approved", "review")
+        # Режимы:
+        #   manual - публикуется только то, что человек одобрил;
+        #   auto   - очередь. Пост, прошедший проверки (review), сам идёт в
+        #            публикацию, но не сразу и не всё подряд: по расписанию
+        #            (дни недели и час из pipe_settings.publish.schedule), по
+        #            одному за слот, и только если пролежал в очереди не
+        #            меньше hold_hours - это окно, в котором человек может
+        #            зайти и снять или поправить пост. Что отклонено руками
+        #            (rejected), не уходит никогда.
+        auto = pub.get("mode") == "auto"
+        statuses = ("approved", "review") if auto else ("approved",)
         with conn.cursor() as cur:
             if args.draft:
                 cur.execute("SELECT * FROM pipe_drafts WHERE id = %s AND lang = 'ru'", (args.draft,))
@@ -235,6 +308,9 @@ def main() -> None:
                 cur.execute("SELECT * FROM pipe_drafts WHERE lang = 'ru' AND status = ANY(%s) ORDER BY reviewed_at NULLS LAST, id",
                             (list(statuses),))
                 drafts = [dict(r) for r in cur.fetchall()]
+
+        if auto and not args.draft:
+            drafts = pick_for_slot(run, conn, drafts, pub)
         run.items_in = len(drafts)
         if not drafts:
             run.log("нечего публиковать (режим %s)", pub.get("mode"))
