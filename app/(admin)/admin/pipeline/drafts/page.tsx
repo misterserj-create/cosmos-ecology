@@ -39,37 +39,37 @@ function DraftsInner() {
     <PipelineShell title={`Черновики (${rows.length})`}>
       <div style={{ display: 'flex', gap: 8, marginBottom: 20, flexWrap: 'wrap' }}>
         {STATUSES.map(s => (
-          <button key={s} onClick={() => setStatus(s)} style={{ ...btn, color: s === status ? '#c9a84c' : '#888', borderColor: s === status ? '#c9a84c' : '#333' }}>{s ? STATUS_LABEL[s] : 'все'}</button>
+          <button key={s} onClick={() => setStatus(s)} style={{ ...btn, color: s === status ? '#c9a84c' : '#5c574f', borderColor: s === status ? '#c9a84c' : '#c4bfb4' }}>{s ? STATUS_LABEL[s] : 'все'}</button>
         ))}
       </div>
-      {err && <div style={{ color: '#e66', marginBottom: 12 }}>{err}</div>}
+      {err && <div style={{ color: '#b3261e', marginBottom: 12 }}>{err}</div>}
       <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-        <thead><tr style={{ borderBottom: '1px solid #222' }}>{['создан', 'материал', 'качество', 'факты', 'переводы', 'статус', 'публикация', ''].map(h => <th key={h} style={th}>{h}</th>)}</tr></thead>
+        <thead><tr style={{ borderBottom: '1px solid #d9d5cc' }}>{['создан', 'материал', 'качество', 'факты', 'переводы', 'статус', 'публикация', ''].map(h => <th key={h} style={th}>{h}</th>)}</tr></thead>
         <tbody>
           {rows.map(r => (
-            <tr key={r.id} style={{ borderBottom: '1px solid #161616' }}>
-              <td style={{ ...td, color: '#666', whiteSpace: 'nowrap' }}>{fmtDate(r.created_at)}<br /><span style={{ fontSize: '0.7rem' }}>{usd(r.model_cost)}</span></td>
+            <tr key={r.id} style={{ borderBottom: '1px solid #e6e3dc' }}>
+              <td style={{ ...td, color: '#6f6a61', whiteSpace: 'nowrap' }}>{fmtDate(r.created_at)}<br /><span style={{ fontSize: '0.9rem' }}>{usd(r.model_cost)}</span></td>
               <td style={{ ...td, maxWidth: 480 }}>
-                <Link href={`/admin/pipeline/drafts/${r.id}`} style={{ color: '#ddd', textDecoration: 'none' }}>{r.title || `черновик ${r.id}`}</Link>
+                <Link href={`/admin/pipeline/drafts/${r.id}`} style={{ color: '#1f1d1a', textDecoration: 'none' }}>{r.title || `черновик ${r.id}`}</Link>
                 <div style={{ ...muted, marginTop: 2 }}>{r.created_by}</div>
               </td>
               <td style={{ ...td, whiteSpace: 'nowrap' }}>
-                {r.quality_avg != null ? <span style={{ color: r.quality_passed === 'true' ? '#4caf50' : '#e66' }}>{Number(r.quality_avg).toFixed(1)}</span> : <span style={muted}>–</span>}
+                {r.quality_avg != null ? <span style={{ color: r.quality_passed === 'true' ? '#2e7d32' : '#b3261e' }}>{Number(r.quality_avg).toFixed(1)}</span> : <span style={muted}>–</span>}
               </td>
               <td style={td}>
-                {r.fact_verdict ? <span style={{ color: r.fact_verdict === 'ok' ? '#4caf50' : '#e66' }}>{r.fact_verdict === 'ok' ? 'ok' : `расхождений ${r.fact_issues}`}</span> : <span style={muted}>–</span>}
+                {r.fact_verdict ? <span style={{ color: r.fact_verdict === 'ok' ? '#2e7d32' : '#b3261e' }}>{r.fact_verdict === 'ok' ? 'ok' : `расхождений ${r.fact_issues}`}</span> : <span style={muted}>–</span>}
               </td>
-              <td style={{ ...td, color: '#888', fontSize: '0.8rem' }}>{r.langs || <span style={muted}>нет</span>}</td>
-              <td style={td}><Badge text={STATUS_LABEL[r.status] || r.status} color={STATUS_COLOR[r.status] || '#888'} /></td>
-              <td style={{ ...td, fontSize: '0.8rem' }}>
+              <td style={{ ...td, color: '#5c574f', fontSize: '1rem' }}>{r.langs || <span style={muted}>нет</span>}</td>
+              <td style={td}><Badge text={STATUS_LABEL[r.status] || r.status} color={STATUS_COLOR[r.status] || '#5c574f'} /></td>
+              <td style={{ ...td, fontSize: '1rem' }}>
                 {Object.entries(r.published_to || {}).filter(([k]) => k === 'tg' || k === 'vk').map(([k, v]) => (
-                  <div key={k}>{v.ok && v.url ? <a href={v.url} target="_blank" rel="noreferrer" style={{ color: '#5b9bd5' }}>{k}</a> : <span style={{ color: '#e66' }} title={v.error}>{k}: ошибка</span>}</div>
+                  <div key={k}>{v.ok && v.url ? <a href={v.url} target="_blank" rel="noreferrer" style={{ color: '#1f5fa8' }}>{k}</a> : <span style={{ color: '#b3261e' }} title={v.error}>{k}: ошибка</span>}</div>
                 ))}
-                {r.published_to?.publish_now && r.status === 'approved' && <span style={{ color: '#c9a84c' }}>ждёт прогона</span>}
+                {r.published_to?.publish_now && r.status === 'approved' && <span style={{ color: '#8a6d1f' }}>ждёт прогона</span>}
               </td>
               <td style={{ ...td, whiteSpace: 'nowrap' }}>
-                {(r.status === 'review' || r.status === 'draft') && <button onClick={() => act(r.id, 'approve')} style={{ ...btn, color: '#4caf50', marginRight: 6 }}>одобрить</button>}
-                {r.status !== 'published' && r.status !== 'rejected' && <button onClick={() => act(r.id, 'reject')} style={{ ...btn, color: '#a55' }}>отклонить</button>}
+                {(r.status === 'review' || r.status === 'draft') && <button onClick={() => act(r.id, 'approve')} style={{ ...btn, color: '#2e7d32', marginRight: 6 }}>одобрить</button>}
+                {r.status !== 'published' && r.status !== 'rejected' && <button onClick={() => act(r.id, 'reject')} style={{ ...btn, color: '#8c2a23' }}>отклонить</button>}
               </td>
             </tr>
           ))}

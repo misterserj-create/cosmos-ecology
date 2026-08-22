@@ -199,8 +199,8 @@ export default function JournalEdit({ params }: { params: Promise<{ id: string }
   return (
     <div style={page}>
       <div style={{ display:'flex', gap:16, alignItems:'center', marginBottom:24 }}>
-        <Link href="/admin/journal" style={{ color:'#555', textDecoration:'none' }}>← Назад</Link>
-        <h1 style={{ margin:0, color:'#c9a84c', fontSize:'1.2rem' }}>
+        <Link href="/admin/journal" style={{ color:'#6f6a61', textDecoration:'none' }}>← Назад</Link>
+        <h1 style={{ margin:0, color:'#8a6d1f', fontSize:'1.4rem' }}>
           {isNew ? 'Новая публикация' : form.title}
         </h1>
         {staleCount > 0 && (
@@ -250,8 +250,8 @@ export default function JournalEdit({ params }: { params: Promise<{ id: string }
             <div style={{ display:'flex', gap:16, alignItems:'flex-start' }}>
               {form.cover_url && <img src={form.cover_url} alt="" style={{ width:180, height:120, objectFit:'cover' }} />}
               <div>
-                <input type="file" accept="image/*" onChange={uploadCover} style={{ color:'#888' }} />
-                {uploading === 'cover' && <div style={{ color:'#c9a84c', marginTop:8 }}>Загрузка...</div>}
+                <input type="file" accept="image/*" onChange={uploadCover} style={{ color:'#5c574f' }} />
+                {uploading === 'cover' && <div style={{ color:'#8a6d1f', marginTop:8 }}>Загрузка...</div>}
                 {form.cover_url && (
                   <button type="button" onClick={() => set('cover_url', '')} style={{ ...linkBtn, marginTop:8 }}>убрать обложку</button>
                 )}
@@ -267,25 +267,25 @@ export default function JournalEdit({ params }: { params: Promise<{ id: string }
                   <img src={u} alt="" style={{ width:120, height:90, objectFit:'cover', display:'block' }} />
                   <div style={{ display:'flex', gap:6, marginTop:4 }}>
                     <button type="button" onClick={() => set('cover_url', u)} style={linkBtn}>обложка</button>
-                    <button type="button" onClick={() => set('gallery_urls', form.gallery_urls.filter((_, j) => j !== i))} style={{ ...linkBtn, color:'#e55' }}>убрать</button>
+                    <button type="button" onClick={() => set('gallery_urls', form.gallery_urls.filter((_, j) => j !== i))} style={{ ...linkBtn, color:'#b3261e' }}>убрать</button>
                   </div>
                 </div>
               ))}
             </div>
-            <input type="file" accept="image/*" multiple onChange={uploadGallery} style={{ color:'#888' }} />
-            {uploading === 'gallery' && <div style={{ color:'#c9a84c', marginTop:8 }}>Загрузка...</div>}
+            <input type="file" accept="image/*" multiple onChange={uploadGallery} style={{ color:'#5c574f' }} />
+            {uploading === 'gallery' && <div style={{ color:'#8a6d1f', marginTop:8 }}>Загрузка...</div>}
           </div>
 
           <div style={{ gridColumn:'1/-1' }}>
             <label style={lbl}>Видео</label>
             {form.video_urls.map((u, i) => (
-              <div key={u + i} style={{ display:'flex', gap:12, alignItems:'center', marginBottom:6, fontSize:'0.85rem', color:'#888' }}>
+              <div key={u + i} style={{ display:'flex', gap:12, alignItems:'center', marginBottom:6, fontSize:'1.05rem', color:'#5c574f' }}>
                 <span style={{ wordBreak:'break-all' }}>{u}</span>
-                <button type="button" onClick={() => set('video_urls', form.video_urls.filter((_, j) => j !== i))} style={{ ...linkBtn, color:'#e55' }}>убрать</button>
+                <button type="button" onClick={() => set('video_urls', form.video_urls.filter((_, j) => j !== i))} style={{ ...linkBtn, color:'#b3261e' }}>убрать</button>
               </div>
             ))}
-            <input type="file" accept="video/*" onChange={uploadVideoFile} style={{ color:'#888' }} />
-            {uploading === 'video' && <div style={{ color:'#c9a84c', marginTop:8 }}>Загрузка...</div>}
+            <input type="file" accept="video/*" onChange={uploadVideoFile} style={{ color:'#5c574f' }} />
+            {uploading === 'video' && <div style={{ color:'#8a6d1f', marginTop:8 }}>Загрузка...</div>}
           </div>
 
           <div>
@@ -317,12 +317,12 @@ export default function JournalEdit({ params }: { params: Promise<{ id: string }
   )
 }
 
-const page: React.CSSProperties = { minHeight:'100vh', background:'#080808', color:'#ddd', padding:'40px 32px', fontFamily:'sans-serif' }
-const lbl: React.CSSProperties = { display:'block', color:'#555', fontSize:'0.75rem', letterSpacing:'0.1em', marginBottom:6, textTransform:'uppercase' }
-const inp: React.CSSProperties = { width:'100%', background:'#111', border:'1px solid #222', color:'#ddd', padding:'10px 14px', fontSize:'0.95rem', outline:'none', boxSizing:'border-box', resize:'vertical' as const }
-const saveBtn: React.CSSProperties = { background:'#c9a84c', color:'#000', border:'none', padding:'12px 32px', fontSize:'0.9rem', cursor:'pointer', fontWeight:600 }
-const delBtn: React.CSSProperties = { background:'transparent', color:'#e55', border:'1px solid #e55', padding:'12px 24px', fontSize:'0.9rem', cursor:'pointer' }
-const smallBtn: React.CSSProperties = { background:'#111', color:'#c9a84c', border:'1px solid #222', padding:'0 14px', cursor:'pointer' }
-const linkBtn: React.CSSProperties = { background:'none', border:'none', color:'#c9a84c', cursor:'pointer', fontSize:'0.75rem', padding:0 }
-const staleBadge: React.CSSProperties = { color:'#e0a030', border:'1px solid #4a3d18', padding:'4px 10px', fontSize:'0.75rem' }
-const errorBox: React.CSSProperties = { marginTop:20, maxWidth:960, border:'1px solid #5a2d2d', background:'#160606', color:'#e55', padding:'12px 16px', fontSize:'0.85rem' }
+const page: React.CSSProperties = { minHeight:'100vh', background:'#f5f4f0', color:'#1f1d1a', padding:'40px 32px', fontFamily:'var(--font-inter), system-ui, sans-serif', fontSize:'1.05rem', lineHeight:1.55 }
+const lbl: React.CSSProperties = { display:'block', color:'#6f6a61', fontSize:'0.95rem', letterSpacing:'0.1em', marginBottom:6, textTransform:'uppercase' }
+const inp: React.CSSProperties = { width:'100%', background:'#ffffff', border:'1px solid #d9d5cc', color:'#1f1d1a', padding:'10px 14px', fontSize:'1.15rem', outline:'none', boxSizing:'border-box', resize:'vertical' as const }
+const saveBtn: React.CSSProperties = { background:'#c9a84c', color:'#000', border:'none', padding:'12px 32px', fontSize:'1.1rem', cursor:'pointer', fontWeight:600 }
+const delBtn: React.CSSProperties = { background:'transparent', color:'#b3261e', border:'1px solid #b3261e', padding:'12px 24px', fontSize:'1.1rem', cursor:'pointer' }
+const smallBtn: React.CSSProperties = { background:'#ffffff', color:'#8a6d1f', border:'1px solid #d9d5cc', padding:'0 14px', cursor:'pointer' }
+const linkBtn: React.CSSProperties = { background:'none', border:'none', color:'#8a6d1f', cursor:'pointer', fontSize:'0.95rem', padding:0 }
+const staleBadge: React.CSSProperties = { color:'#9a6b00', border:'1px solid #c9a84c', padding:'4px 10px', fontSize:'0.95rem' }
+const errorBox: React.CSSProperties = { marginTop:20, maxWidth:960, border:'1px solid #5a2d2d', background:'#160606', color:'#b3261e', padding:'12px 16px', fontSize:'1.05rem' }

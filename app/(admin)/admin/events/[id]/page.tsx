@@ -109,8 +109,8 @@ export default function EventEdit({ params }: { params: Promise<{ id: string }> 
   return (
     <div style={page}>
       <div style={{ display:'flex', gap:16, alignItems:'center', marginBottom:24 }}>
-        <Link href="/admin/events" style={{ color:'#555', textDecoration:'none' }}>← Назад</Link>
-        <h1 style={{ margin:0, color:'#c9a84c', fontSize:'1.2rem' }}>
+        <Link href="/admin/events" style={{ color:'#6f6a61', textDecoration:'none' }}>← Назад</Link>
+        <h1 style={{ margin:0, color:'#8a6d1f', fontSize:'1.4rem' }}>
           {isNew ? 'Новое событие' : form.title as string}
         </h1>
         {staleCount > 0 && <span style={staleBadge}>устарели переводы: {staleCount}</span>}
@@ -164,8 +164,8 @@ export default function EventEdit({ params }: { params: Promise<{ id: string }> 
               <div style={{ display:'flex', gap:16, alignItems:'flex-start' }}>
                 {form.thumb_url && <img src={form.thumb_url as string} alt="" style={{ width:120, height:80, objectFit:'cover' }} />}
                 <div>
-                  <input type="file" accept="image/*" onChange={uploadFile} style={{ color:'#888' }} />
-                  {uploading && <div style={{ color:'#c9a84c', marginTop:8 }}>Загрузка...</div>}
+                  <input type="file" accept="image/*" onChange={uploadFile} style={{ color:'#5c574f' }} />
+                  {uploading && <div style={{ color:'#8a6d1f', marginTop:8 }}>Загрузка...</div>}
                 </div>
               </div>
             </div>
@@ -193,10 +193,10 @@ export default function EventEdit({ params }: { params: Promise<{ id: string }> 
   )
 }
 
-const page: React.CSSProperties = { minHeight:'100vh', background:'#080808', color:'#ddd', padding:'40px 32px', fontFamily:'sans-serif' }
-const lbl: React.CSSProperties = { display:'block', color:'#555', fontSize:'0.75rem', letterSpacing:'0.1em', marginBottom:6, textTransform:'uppercase' }
-const inp: React.CSSProperties = { width:'100%', background:'#111', border:'1px solid #222', color:'#ddd', padding:'10px 14px', fontSize:'0.95rem', outline:'none', boxSizing:'border-box', resize:'vertical' as const }
-const saveBtn: React.CSSProperties = { background:'#c9a84c', color:'#000', border:'none', padding:'12px 32px', fontSize:'0.9rem', cursor:'pointer', fontWeight:600 }
-const delBtn: React.CSSProperties = { background:'transparent', color:'#e55', border:'1px solid #e55', padding:'12px 24px', fontSize:'0.9rem', cursor:'pointer' }
-const staleBadge: React.CSSProperties = { color:'#e0a030', border:'1px solid #4a3d18', padding:'4px 10px', fontSize:'0.75rem' }
-const hint: React.CSSProperties = { maxWidth:960, marginTop:20, color:'#4a4a4a', fontSize:'0.8rem', lineHeight:1.6 }
+const page: React.CSSProperties = { minHeight:'100vh', background:'#f5f4f0', color:'#1f1d1a', padding:'40px 32px', fontFamily:'var(--font-inter), system-ui, sans-serif', fontSize:'1.05rem', lineHeight:1.55 }
+const lbl: React.CSSProperties = { display:'block', color:'#6f6a61', fontSize:'0.95rem', letterSpacing:'0.1em', marginBottom:6, textTransform:'uppercase' }
+const inp: React.CSSProperties = { width:'100%', background:'#ffffff', border:'1px solid #d9d5cc', color:'#1f1d1a', padding:'10px 14px', fontSize:'1.15rem', outline:'none', boxSizing:'border-box', resize:'vertical' as const }
+const saveBtn: React.CSSProperties = { background:'#c9a84c', color:'#000', border:'none', padding:'12px 32px', fontSize:'1.1rem', cursor:'pointer', fontWeight:600 }
+const delBtn: React.CSSProperties = { background:'transparent', color:'#b3261e', border:'1px solid #b3261e', padding:'12px 24px', fontSize:'1.1rem', cursor:'pointer' }
+const staleBadge: React.CSSProperties = { color:'#9a6b00', border:'1px solid #c9a84c', padding:'4px 10px', fontSize:'0.95rem' }
+const hint: React.CSSProperties = { maxWidth:960, marginTop:20, color:'#8a857b', fontSize:'1rem', lineHeight:1.6 }

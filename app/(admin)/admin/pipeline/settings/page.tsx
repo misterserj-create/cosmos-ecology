@@ -44,13 +44,13 @@ export default function SettingsPage() {
     setSources(prev => prev.map(x => x.id === id ? { ...x, active } : x))
   }
 
-  if (!s) return <PipelineShell title="Настройки">{msg ? <div style={{ color: '#e66' }}>{msg}</div> : <div style={muted}>Загрузка…</div>}</PipelineShell>
+  if (!s) return <PipelineShell title="Настройки">{msg ? <div style={{ color: '#b3261e' }}>{msg}</div> : <div style={muted}>Загрузка…</div>}</PipelineShell>
 
   const set = <K extends keyof Settings>(k: K, v: Settings[K]) => setS({ ...s, [k]: v })
 
   return (
     <PipelineShell title="Настройки" right={<button onClick={save} style={btnGold}>Сохранить</button>}>
-      {msg && <div style={{ color: msg.startsWith('Сохранено') ? '#4caf50' : '#e66', marginBottom: 16, fontSize: '0.85rem' }}>{msg}</div>}
+      {msg && <div style={{ color: msg.startsWith('Сохранено') ? '#2e7d32' : '#b3261e', marginBottom: 16, fontSize: '1.05rem' }}>{msg}</div>}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))', gap: 20 }}>
         <div style={card}>
           <div style={h3}>Публикация</div>
@@ -111,17 +111,17 @@ export default function SettingsPage() {
         <div style={h3}>Источники ({sources.length})</div>
         <div style={{ ...muted, marginBottom: 10 }}>Ленты читает collect.py. Реестр заполняется скриптом seed_sources.py; здесь можно выключить или включить ленту.</div>
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-          <thead><tr style={{ borderBottom: '1px solid #222' }}>{['вид', 'название', 'адрес', 'авторитет', 'находок', 'последний раз', ''].map(h => <th key={h} style={th}>{h}</th>)}</tr></thead>
+          <thead><tr style={{ borderBottom: '1px solid #d9d5cc' }}>{['вид', 'название', 'адрес', 'авторитет', 'находок', 'последний раз', ''].map(h => <th key={h} style={th}>{h}</th>)}</tr></thead>
           <tbody>
             {sources.map(x => (
-              <tr key={x.id} style={{ borderBottom: '1px solid #161616', opacity: x.active ? 1 : 0.5 }}>
+              <tr key={x.id} style={{ borderBottom: '1px solid #e6e3dc', opacity: x.active ? 1 : 0.5 }}>
                 <td style={td}>{x.kind === 'rss' ? `лента${x.feed_kind ? ` (${x.feed_kind})` : ''}` : x.kind === 'search' ? 'поиск' : 'справочник'}</td>
                 <td style={td}>{x.name}{x.organization ? <div style={muted}>{x.organization}</div> : null}</td>
-                <td style={{ ...td, color: '#777', fontSize: '0.8rem', wordBreak: 'break-all', maxWidth: 360 }}>{x.query_or_url}</td>
+                <td style={{ ...td, color: '#5c574f', fontSize: '1rem', wordBreak: 'break-all', maxWidth: 360 }}>{x.query_or_url}</td>
                 <td style={td}>{x.authority ? `${x.authority}/5` : ''}</td>
                 <td style={td}>{x.findings}</td>
-                <td style={{ ...td, fontSize: '0.8rem' }}>{fmtDate(x.last_run_at)}{x.last_error && <div style={{ color: '#e66' }}>{x.last_error}</div>}</td>
-                <td style={td}><button onClick={() => toggleSource(x.id, !x.active)} style={{ ...btn, color: x.active ? '#4caf50' : '#666' }}>{x.active ? 'вкл' : 'выкл'}</button></td>
+                <td style={{ ...td, fontSize: '1rem' }}>{fmtDate(x.last_run_at)}{x.last_error && <div style={{ color: '#b3261e' }}>{x.last_error}</div>}</td>
+                <td style={td}><button onClick={() => toggleSource(x.id, !x.active)} style={{ ...btn, color: x.active ? '#2e7d32' : '#6f6a61' }}>{x.active ? 'вкл' : 'выкл'}</button></td>
               </tr>
             ))}
           </tbody>
@@ -139,5 +139,5 @@ function Num({ label, value, onChange }: { label: string; value: number; onChang
   )
 }
 
-const h3: React.CSSProperties = { color: '#999', fontSize: '0.75rem', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 10 }
-const lbl: React.CSSProperties = { display: 'block', fontSize: '0.8rem', color: '#888', marginBottom: 12 }
+const h3: React.CSSProperties = { color: '#4a463f', fontSize: '0.95rem', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 10 }
+const lbl: React.CSSProperties = { display: 'block', fontSize: '1rem', color: '#5c574f', marginBottom: 12 }

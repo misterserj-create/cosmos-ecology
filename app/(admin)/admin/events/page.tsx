@@ -35,7 +35,7 @@ export default function EventsAdmin() {
 
       <table style={{ width:'100%', borderCollapse:'collapse' }}>
         <thead>
-          <tr style={{ borderBottom:'1px solid #222', textAlign:'left' }}>
+          <tr style={{ borderBottom:'1px solid #d9d5cc', textAlign:'left' }}>
             {['Название','Тип','Дата','Место','Опубликовано',''].map(h => (
               <th key={h} style={th}>{h}</th>
             ))}
@@ -43,15 +43,15 @@ export default function EventsAdmin() {
         </thead>
         <tbody>
           {rows.map(r => (
-            <tr key={r.id} style={{ borderBottom:'1px solid #1a1a1a' }}>
+            <tr key={r.id} style={{ borderBottom:'1px solid #ffffff' }}>
               <td style={td}>{r.title}</td>
-              <td style={{ ...td, color:'#666', fontSize:'0.85rem' }}>{r.type}</td>
-              <td style={{ ...td, color:'#666', fontSize:'0.85rem' }}>{r.event_date?.slice(0,10) || ''}</td>
-              <td style={{ ...td, color:'#888', fontSize:'0.85rem' }}>{r.place}</td>
+              <td style={{ ...td, color:'#6f6a61', fontSize:'1.05rem' }}>{r.type}</td>
+              <td style={{ ...td, color:'#6f6a61', fontSize:'1.05rem' }}>{r.event_date?.slice(0,10) || ''}</td>
+              <td style={{ ...td, color:'#5c574f', fontSize:'1.05rem' }}>{r.place}</td>
               <td style={td}>
                 <button
                   onClick={() => toggle(r.id, !r.published)}
-                  style={{ ...toggleBtn, background: r.published ? '#2d5a2d' : '#1a1a1a', color: r.published ? '#4caf50' : '#555' }}
+                  style={{ ...toggleBtn, background: r.published ? '#2d5a2d' : '#ffffff', color: r.published ? '#2e7d32' : '#6f6a61' }}
                 >
                   {r.published ? 'Да' : 'Нет'}
                 </button>
@@ -67,11 +67,11 @@ export default function EventsAdmin() {
   )
 }
 
-const page: React.CSSProperties = { minHeight:'100vh', background:'#080808', color:'#ddd', padding:'40px 32px', fontFamily:'sans-serif' }
-const h1: React.CSSProperties = { margin:0, color:'#c9a84c', fontSize:'1.4rem' }
-const th: React.CSSProperties = { padding:'8px 12px', color:'#555', fontSize:'0.8rem', fontWeight:400, letterSpacing:'0.1em' }
+const page: React.CSSProperties = { minHeight:'100vh', background:'#f5f4f0', color:'#1f1d1a', padding:'40px 32px', fontFamily:'var(--font-inter), system-ui, sans-serif', fontSize:'1.05rem', lineHeight:1.55 }
+const h1: React.CSSProperties = { margin:0, color:'#8a6d1f', fontSize:'1.6rem' }
+const th: React.CSSProperties = { padding:'8px 12px', color:'#6f6a61', fontSize:'1rem', fontWeight:400, letterSpacing:'0.1em' }
 const td: React.CSSProperties = { padding:'10px 12px', verticalAlign:'middle' }
-const toggleBtn: React.CSSProperties = { border:'none', padding:'4px 12px', cursor:'pointer', fontSize:'0.8rem', borderRadius:2 }
-const editLink: React.CSSProperties = { color:'#c9a84c', fontSize:'0.85rem', textDecoration:'none' }
-const addBtn: React.CSSProperties = { background:'#c9a84c', color:'#000', padding:'8px 20px', textDecoration:'none', fontSize:'0.85rem', fontWeight:600 }
-const navLink: React.CSSProperties = { color:'#555', fontSize:'0.9rem', textDecoration:'none' }
+const toggleBtn: React.CSSProperties = { border:'none', padding:'4px 12px', cursor:'pointer', fontSize:'1rem', borderRadius:2 }
+const editLink: React.CSSProperties = { color:'#8a6d1f', fontSize:'1.05rem', textDecoration:'none' }
+const addBtn: React.CSSProperties = { background:'#c9a84c', color:'#000', padding:'8px 20px', textDecoration:'none', fontSize:'1.05rem', fontWeight:600 }
+const navLink: React.CSSProperties = { color:'#6f6a61', fontSize:'1.1rem', textDecoration:'none' }

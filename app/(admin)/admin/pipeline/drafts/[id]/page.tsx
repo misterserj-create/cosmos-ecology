@@ -51,7 +51,7 @@ export default function DraftPage({ params }: { params: Promise<{ id: string }> 
     if (action === 'regen_image') setMsg('Картинка сброшена. illustrate.py сделает новую при следующем прогоне или вручную: python3 illustrate.py --draft ' + id)
   }
 
-  if (!d) return <PipelineShell title="Черновик">{msg ? <div style={{ color: '#e66' }}>{msg}</div> : <div style={muted}>Загрузка…</div>}</PipelineShell>
+  if (!d) return <PipelineShell title="Черновик">{msg ? <div style={{ color: '#b3261e' }}>{msg}</div> : <div style={muted}>Загрузка…</div>}</PipelineShell>
 
   const q = d.quality || {}
   const fc = d.fact_check || {}
@@ -61,27 +61,27 @@ export default function DraftPage({ params }: { params: Promise<{ id: string }> 
   return (
     <PipelineShell
       title={d.title || `Черновик ${d.id}`}
-      right={<Link href="/admin/pipeline/drafts" style={{ color: '#666', textDecoration: 'none', fontSize: '0.9rem' }}>← Черновики</Link>}
+      right={<Link href="/admin/pipeline/drafts" style={{ color: '#6f6a61', textDecoration: 'none', fontSize: '1.1rem' }}>← Черновики</Link>}
     >
       <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap', marginBottom: 20 }}>
-        <Badge text={STATUS_LABEL[d.status] || d.status} color={STATUS_COLOR[d.status] || '#888'} />
+        <Badge text={STATUS_LABEL[d.status] || d.status} color={STATUS_COLOR[d.status] || '#5c574f'} />
         <span style={muted}>{d.created_by} · {fmtDate(d.created_at)} · {usd(d.model_cost)}</span>
         {d.reviewed_by && <span style={muted}>· проверил {d.reviewed_by} {fmtDate(d.reviewed_at)}</span>}
         {q.rewrite_requested && d.status === 'draft' && <Badge text="ждёт переписывания" color="#c9a84c" />}
         {q.dash_fixed && <Badge text="длинное тире заменено" color="#776" />}
         <div style={{ flex: 1 }} />
-        {d.status !== 'published' && d.status !== 'rejected' && <button onClick={() => act('approve')} style={{ ...btn, color: '#4caf50' }}>Одобрить</button>}
+        {d.status !== 'published' && d.status !== 'rejected' && <button onClick={() => act('approve')} style={{ ...btn, color: '#2e7d32' }}>Одобрить</button>}
         {d.status !== 'published' && <button onClick={() => act('rewrite')} style={btn}>Переписать</button>}
         {d.status !== 'published' && <button onClick={() => act('publish_now')} style={btnGold}>Опубликовать сейчас</button>}
         {d.status !== 'published' && d.status !== 'rejected' && <button onClick={() => act('reject')} style={btnRed}>Отклонить</button>}
       </div>
-      {msg && <div style={{ color: '#c9a84c', marginBottom: 16, fontSize: '0.85rem' }}>{msg}</div>}
+      {msg && <div style={{ color: '#8a6d1f', marginBottom: 16, fontSize: '1.05rem' }}>{msg}</div>}
 
       <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 3fr) minmax(280px, 2fr)', gap: 24, alignItems: 'start' }}>
         <div>
           <div style={{ display: 'flex', gap: 2, marginBottom: 12, flexWrap: 'wrap' }}>
             {['ru', ...d.translations.map(t => t.lang)].map(l => (
-              <button key={l} onClick={() => { setTab(l); setEditing(false) }} style={{ ...btn, color: tab === l ? '#c9a84c' : '#777', borderColor: tab === l ? '#c9a84c' : '#333' }}>
+              <button key={l} onClick={() => { setTab(l); setEditing(false) }} style={{ ...btn, color: tab === l ? '#c9a84c' : '#5c574f', borderColor: tab === l ? '#c9a84c' : '#c4bfb4' }}>
                 {LANG_NAMES[l] || l}
               </button>
             ))}
@@ -97,7 +97,7 @@ export default function DraftPage({ params }: { params: Promise<{ id: string }> 
                   <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
                     <button onClick={() => act('edit', { body, title })} style={btnGold}>Сохранить</button>
                     <button onClick={() => { setEditing(false); setBody(d.body); setTitle(d.title) }} style={btn}>Отмена</button>
-                    {body.includes('—') && <span style={{ color: '#e66', fontSize: '0.8rem', alignSelf: 'center' }}>в тексте длинное тире «—», нужно «–»</span>}
+                    {body.includes('—') && <span style={{ color: '#b3261e', fontSize: '1rem', alignSelf: 'center' }}>в тексте длинное тире «—», нужно «–»</span>}
                   </div>
                 </>
               ) : (
@@ -126,9 +126,9 @@ export default function DraftPage({ params }: { params: Promise<{ id: string }> 
             <div style={{ ...card, marginTop: 16 }}>
               <div style={h3}>Публикация</div>
               {Object.entries(d.published_to).filter(([k]) => k === 'tg' || k === 'vk').map(([k, v]) => typeof v === 'string' ? null : (
-                <div key={k} style={{ fontSize: '0.85rem', marginBottom: 4 }}>
-                  <strong style={{ color: '#aaa' }}>{k}</strong>:{' '}
-                  {v.ok ? <a href={v.url} target="_blank" rel="noreferrer" style={{ color: '#5b9bd5' }}>{v.url || 'опубликовано'}</a> : <span style={{ color: '#e66' }}>{v.error}{v.needs_check ? ' (проверить канал вручную, возможен дубль)' : ''}</span>}
+                <div key={k} style={{ fontSize: '1.05rem', marginBottom: 4 }}>
+                  <strong style={{ color: '#3d3a34' }}>{k}</strong>:{' '}
+                  {v.ok ? <a href={v.url} target="_blank" rel="noreferrer" style={{ color: '#1f5fa8' }}>{v.url || 'опубликовано'}</a> : <span style={{ color: '#b3261e' }}>{v.error}{v.needs_check ? ' (проверить канал вручную, возможен дубль)' : ''}</span>}
                 </div>
               ))}
             </div>
@@ -138,8 +138,8 @@ export default function DraftPage({ params }: { params: Promise<{ id: string }> 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
           <div style={card}>
             <div style={h3}>Источник</div>
-            {d.source_url && <a href={d.source_url} target="_blank" rel="noreferrer" style={{ color: '#c9a84c', fontSize: '0.85rem', wordBreak: 'break-all' }}>{d.source_title || d.source_url}</a>}
-            {d.source_summary && <p style={{ ...muted, color: '#999', lineHeight: 1.5 }}>{d.source_summary}</p>}
+            {d.source_url && <a href={d.source_url} target="_blank" rel="noreferrer" style={{ color: '#8a6d1f', fontSize: '1.05rem', wordBreak: 'break-all' }}>{d.source_title || d.source_url}</a>}
+            {d.source_summary && <p style={{ ...muted, color: '#4a463f', lineHeight: 1.5 }}>{d.source_summary}</p>}
             {d.judge?.angle && <div style={muted}>угол: {d.judge.angle}</div>}
           </div>
 
@@ -148,7 +148,7 @@ export default function DraftPage({ params }: { params: Promise<{ id: string }> 
             {d.image_url ? (
               <>
                 <img src={d.image_url} alt="" style={{ width: '100%', borderRadius: 6, display: 'block', marginBottom: 8 }} />
-                {d.image_prompt && <p style={{ ...muted, color: '#999', lineHeight: 1.5 }}>{d.image_prompt}</p>}
+                {d.image_prompt && <p style={{ ...muted, color: '#4a463f', lineHeight: 1.5 }}>{d.image_prompt}</p>}
                 <div style={muted}>{d.image_cost ? usd(d.image_cost) : ''}</div>
               </>
             ) : (
@@ -158,10 +158,10 @@ export default function DraftPage({ params }: { params: Promise<{ id: string }> 
           </div>
 
           <div style={card}>
-            <div style={h3}>Судьи качества {q.avg != null && <span style={{ color: q.passed ? '#4caf50' : '#e66' }}>{Number(q.avg).toFixed(1)}</span>} <span style={muted}>порог {q.min}</span></div>
+            <div style={h3}>Судьи качества {q.avg != null && <span style={{ color: q.passed ? '#2e7d32' : '#b3261e' }}>{Number(q.avg).toFixed(1)}</span>} <span style={muted}>порог {q.min}</span></div>
             {Object.entries(q.judges || {}).map(([model, j]) => (
               <div key={model} style={{ marginBottom: 10 }}>
-                <div style={{ fontSize: '0.8rem', color: '#aaa' }}>{model}: {j.error ? <span style={{ color: '#e66' }}>{j.error}</span> : <>{j.avg} <span style={muted}>(язык {j.language}, штампы {j.cliches}, связность {j.coherence}, голос {j.voice})</span></>}</div>
+                <div style={{ fontSize: '1rem', color: '#3d3a34' }}>{model}: {j.error ? <span style={{ color: '#b3261e' }}>{j.error}</span> : <>{j.avg} <span style={muted}>(язык {j.language}, штампы {j.cliches}, связность {j.coherence}, голос {j.voice})</span></>}</div>
                 {(j.comments || []).length > 0 && <ul style={{ ...muted, paddingLeft: 18, margin: '4px 0' }}>{j.comments!.map((c, i) => <li key={i}>{c}</li>)}</ul>}
               </div>
             ))}
@@ -170,11 +170,11 @@ export default function DraftPage({ params }: { params: Promise<{ id: string }> 
           </div>
 
           <div style={card}>
-            <div style={h3}>Фактчек <span style={{ color: fc.verdict === 'ok' ? '#4caf50' : fc.verdict ? '#e66' : '#666' }}>{fc.verdict || 'нет'}</span></div>
+            <div style={h3}>Фактчек <span style={{ color: fc.verdict === 'ok' ? '#2e7d32' : fc.verdict ? '#b3261e' : '#6f6a61' }}>{fc.verdict || 'нет'}</span></div>
             {fc.note && <div style={{ ...muted, marginBottom: 6 }}>{fc.note}</div>}
             {(fc.issues || []).map((i, n) => (
-              <div key={n} style={{ fontSize: '0.8rem', marginBottom: 6, borderLeft: `2px solid ${i.severity === 'high' ? '#e66' : '#665'}`, paddingLeft: 8 }}>
-                <div style={{ color: '#ccc' }}>{i.claim}</div>
+              <div key={n} style={{ fontSize: '1rem', marginBottom: 6, borderLeft: `2px solid ${i.severity === 'high' ? '#b3261e' : '#665'}`, paddingLeft: 8 }}>
+                <div style={{ color: '#2f2c27' }}>{i.claim}</div>
                 <div style={muted}>{i.problem}</div>
               </div>
             ))}
@@ -187,7 +187,7 @@ export default function DraftPage({ params }: { params: Promise<{ id: string }> 
               {q.history!.map((h, i) => (
                 <div key={i} style={{ marginTop: 10 }}>
                   <div style={muted}>{h.step}</div>
-                  <pre style={{ ...pre, fontSize: '0.8rem', color: '#888' }}>{h.body}</pre>
+                  <pre style={{ ...pre, fontSize: '1rem', color: '#5c574f' }}>{h.body}</pre>
                 </div>
               ))}
             </details>
@@ -200,4 +200,4 @@ export default function DraftPage({ params }: { params: Promise<{ id: string }> 
 
 function wordCount(s: string) { return (s.match(/[\p{L}\p{N}'’-]+/gu) || []).length }
 
-const h3: React.CSSProperties = { color: '#999', fontSize: '0.75rem', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 8 }
+const h3: React.CSSProperties = { color: '#4a463f', fontSize: '0.95rem', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 8 }

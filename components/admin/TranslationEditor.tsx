@@ -70,11 +70,11 @@ export function LangTabs({
             title={localeNames[lang]}
             style={{
               padding: '8px 16px',
-              border: `1px solid ${isActive ? '#c9a84c' : '#222'}`,
+              border: `1px solid ${isActive ? '#c9a84c' : '#d9d5cc'}`,
               background: isActive ? '#1a1608' : 'transparent',
-              color: isActive ? '#c9a84c' : filled ? '#888' : '#4a4a4a',
+              color: isActive ? '#c9a84c' : filled ? '#5c574f' : '#8a857b',
               cursor: 'pointer',
-              fontSize: '0.8rem',
+              fontSize: '1rem',
               letterSpacing: '0.12em',
               display: 'flex',
               alignItems: 'center',
@@ -82,7 +82,7 @@ export function LangTabs({
             }}
           >
             {lang === defaultLocale ? 'RU · оригинал' : localeShort[lang]}
-            {stale && <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#e0a030' }} />}
+            {stale && <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#9a6b00' }} />}
           </button>
         )
       })}
@@ -110,7 +110,7 @@ export function TranslationPanel({
       <div style={note}>
         Перевод на {localeNames[lang]}. Пустое поле - на сайте покажется русский оригинал.
         {state.updatedAt && (
-          <span style={{ color: '#4a4a4a' }}> · сохранён {state.updatedAt.slice(0, 10)}</span>
+          <span style={{ color: '#8a857b' }}> · сохранён {state.updatedAt.slice(0, 10)}</span>
         )}
       </div>
 
@@ -137,15 +137,15 @@ export function TranslationPanel({
               style={inp}
             />
           )}
-          <div style={original}>{source[f.key] || <span style={{ color: '#333' }}>оригинал пуст</span>}</div>
+          <div style={original}>{source[f.key] || <span style={{ color: '#c4bfb4' }}>оригинал пуст</span>}</div>
         </div>
       ))}
     </div>
   )
 }
 
-const lbl: React.CSSProperties = { display:'block', color:'#555', fontSize:'0.75rem', letterSpacing:'0.1em', marginBottom:6, textTransform:'uppercase' }
-const inp: React.CSSProperties = { width:'100%', background:'#111', border:'1px solid #222', color:'#ddd', padding:'10px 14px', fontSize:'0.95rem', outline:'none', boxSizing:'border-box', resize:'vertical' as const }
-const original: React.CSSProperties = { marginTop:6, color:'#5a5a5a', fontSize:'0.8rem', lineHeight:1.5, borderLeft:'2px solid #1e1e1e', paddingLeft:10 }
-const note: React.CSSProperties = { color:'#666', fontSize:'0.8rem' }
-const staleBox: React.CSSProperties = { border:'1px solid #4a3d18', background:'#161206', color:'#e0a030', padding:'12px 16px', fontSize:'0.85rem', lineHeight:1.6 }
+const lbl: React.CSSProperties = { display:'block', color:'#6f6a61', fontSize:'0.95rem', letterSpacing:'0.1em', marginBottom:6, textTransform:'uppercase' }
+const inp: React.CSSProperties = { width:'100%', background:'#ffffff', border:'1px solid #d9d5cc', color:'#1f1d1a', padding:'10px 14px', fontSize:'1.15rem', outline:'none', boxSizing:'border-box', resize:'vertical' as const }
+const original: React.CSSProperties = { marginTop:6, color:'#6f6a61', fontSize:'1rem', lineHeight:1.5, borderLeft:'2px solid #d9d5cc', paddingLeft:10 }
+const note: React.CSSProperties = { color:'#6f6a61', fontSize:'1rem' }
+const staleBox: React.CSSProperties = { border:'1px solid #c9a84c', background:'#161206', color:'#9a6b00', padding:'12px 16px', fontSize:'1.05rem', lineHeight:1.6 }

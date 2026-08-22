@@ -27,7 +27,7 @@ export default function PipelineOverview() {
 
   return (
     <PipelineShell title="Контент-тракт">
-      {err && <div style={{ color: '#e66', marginBottom: 16 }}>Ошибка: {err}. Скорее всего, не применена миграция 004_pipeline.sql.</div>}
+      {err && <div style={{ color: '#b3261e', marginBottom: 16 }}>Ошибка: {err}. Скорее всего, не применена миграция 004_pipeline.sql.</div>}
       {!data && !err && <div style={muted}>Загрузка…</div>}
       {data && (
         <>
@@ -69,7 +69,7 @@ export default function PipelineOverview() {
                 <tbody>
                   {data.runs.map(r => (
                     <tr key={r.id} style={trb}>
-                      <td style={{ ...td, color: '#555' }}><button onClick={() => setOpenLog(openLog === r.id ? null : r.id)} style={{ background: 'none', border: 'none', color: '#c9a84c', cursor: 'pointer', padding: 0 }}>{r.id}</button></td>
+                      <td style={{ ...td, color: '#6f6a61' }}><button onClick={() => setOpenLog(openLog === r.id ? null : r.id)} style={{ background: 'none', border: 'none', color: '#8a6d1f', cursor: 'pointer', padding: 0 }}>{r.id}</button></td>
                       <td style={td}>{STAGE_LABEL[r.stage] || r.stage}</td>
                       <td style={td}>{fmtDate(r.started_at)}</td>
                       <td style={td}>{duration(r)}</td>
@@ -90,8 +90,8 @@ export default function PipelineOverview() {
                 {data.failures.length === 0 && <div style={muted}>Падений нет.</div>}
                 {data.failures.map(f => (
                   <div key={f.id} style={{ marginBottom: 12 }}>
-                    <div><Badge text={STAGE_LABEL[f.stage] || f.stage} color="#e66" /> <span style={muted}>{fmtDate(f.started_at)} · прогон {f.id}</span></div>
-                    <div style={{ ...muted, color: '#999', marginTop: 4, whiteSpace: 'pre-wrap', maxHeight: 90, overflow: 'hidden' }}>{lastLines(f.log)}</div>
+                    <div><Badge text={STAGE_LABEL[f.stage] || f.stage} color="#b3261e" /> <span style={muted}>{fmtDate(f.started_at)} · прогон {f.id}</span></div>
+                    <div style={{ ...muted, color: '#4a463f', marginTop: 4, whiteSpace: 'pre-wrap', maxHeight: 90, overflow: 'hidden' }}>{lastLines(f.log)}</div>
                   </div>
                 ))}
               </div>
@@ -99,8 +99,8 @@ export default function PipelineOverview() {
                 <h2 style={{ ...h2, marginTop: 0 }}>Расход по моделям, 30 дней</h2>
                 {data.byModel.length === 0 && <div style={muted}>Вызовов ещё не было.</div>}
                 {data.byModel.map(m => (
-                  <div key={m.model} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', padding: '3px 0', borderBottom: '1px solid #161616' }}>
-                    <span style={{ color: '#aaa' }}>{m.model}</span>
+                  <div key={m.model} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '1.05rem', padding: '3px 0', borderBottom: '1px solid #e6e3dc' }}>
+                    <span style={{ color: '#3d3a34' }}>{m.model}</span>
                     <span><span style={muted}>{m.calls} × </span>{usd(m.cost)}</span>
                   </div>
                 ))}
@@ -119,18 +119,18 @@ function RunLog({ id, onClose }: { id: number; onClose: () => void }) {
   return (
     <div style={{ ...card, marginTop: 16 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
-        <strong style={{ color: '#c9a84c' }}>Прогон {id}</strong>
-        <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#666', cursor: 'pointer' }}>закрыть</button>
+        <strong style={{ color: '#8a6d1f' }}>Прогон {id}</strong>
+        <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#6f6a61', cursor: 'pointer' }}>закрыть</button>
       </div>
       {!run && <div style={muted}>Загрузка…</div>}
       {run && (
         <>
-          <pre style={{ ...pre, fontSize: '0.8rem', color: '#aaa', maxHeight: 400, overflow: 'auto' }}>{run.log}</pre>
+          <pre style={{ ...pre, fontSize: '1rem', color: '#3d3a34', maxHeight: 400, overflow: 'auto' }}>{run.log}</pre>
           {run.calls.length > 0 && (
             <div style={{ marginTop: 12 }}>
               <div style={muted}>Вызовы моделей: {run.calls.length}</div>
               {run.calls.map((c, i) => (
-                <div key={i} style={{ fontSize: '0.8rem', color: c.ok ? '#888' : '#e66' }}>
+                <div key={i} style={{ fontSize: '1rem', color: c.ok ? '#5c574f' : '#b3261e' }}>
                   {c.purpose} · {c.model} · {usd(c.cost_usd)}{c.error ? ` · ${c.error}` : ''}
                 </div>
               ))}
@@ -144,15 +144,15 @@ function RunLog({ id, onClose }: { id: number; onClose: () => void }) {
 
 function RunOk({ r }: { r: Run }) {
   if (r.ok === null) return <Badge text="идёт" color="#c9a84c" />
-  return r.ok ? <Badge text="ok" color="#4caf50" /> : <Badge text="упал" color="#e66" />
+  return r.ok ? <Badge text="ok" color="#2e7d32" /> : <Badge text="упал" color="#b3261e" />
 }
 
 function Stat({ label, value, sub, href }: { label: string; value: string | number; sub?: string; href?: string }) {
   const body = (
     <div style={card}>
       <div style={muted}>{label}</div>
-      <div style={{ fontSize: '1.5rem', color: '#eee', margin: '4px 0' }}>{value}</div>
-      {sub && <div style={{ ...muted, fontSize: '0.72rem' }}>{sub}</div>}
+      <div style={{ fontSize: '1.7rem', color: '#1f1d1a', margin: '4px 0' }}>{value}</div>
+      {sub && <div style={{ ...muted, fontSize: '0.9rem' }}>{sub}</div>}
     </div>
   )
   return href ? <Link href={href} style={{ textDecoration: 'none', color: 'inherit' }}>{body}</Link> : body
@@ -170,7 +170,7 @@ function lastLines(log: string) {
   return (errIdx >= 0 ? lines.slice(errIdx, errIdx + 3) : lines.slice(-3)).join('\n')
 }
 
-const h2: React.CSSProperties = { color: '#999', fontSize: '0.85rem', fontWeight: 400, letterSpacing: '0.1em', textTransform: 'uppercase', margin: '0 0 10px' }
+const h2: React.CSSProperties = { color: '#4a463f', fontSize: '1.05rem', fontWeight: 400, letterSpacing: '0.1em', textTransform: 'uppercase', margin: '0 0 10px' }
 const table: React.CSSProperties = { width: '100%', borderCollapse: 'collapse' }
-const trh: React.CSSProperties = { borderBottom: '1px solid #222' }
-const trb: React.CSSProperties = { borderBottom: '1px solid #161616' }
+const trh: React.CSSProperties = { borderBottom: '1px solid #d9d5cc' }
+const trb: React.CSSProperties = { borderBottom: '1px solid #e6e3dc' }
