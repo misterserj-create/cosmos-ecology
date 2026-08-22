@@ -203,6 +203,84 @@ def publish_vk(text: str, group_id: str, image_url: str | None = None) -> dict[s
 # ---------------------------------------------------------------------------
 
 # ---------------------------------------------------------------------------
+# X (Twitter)
+# ---------------------------------------------------------------------------
+# Аккаунт @cosmosecology, тариф Pay Per Use. В X уходит английская версия
+# поста: заголовок перевода, первые фразы до лимита в 280 знаков и ссылка на
+# источник, картинка вложением. Ключи OAuth 1.0a в .env: X_API_KEY,
+# X_API_SECRET, X_ACCESS_TOKEN, X_ACCESS_SECRET (Access Token должен быть
+# выпущен с правами Read and write).
+
+X_TWEET_MAX = 280
+X_URL_LEN = 23          # любая ссылка в X считается за 23 знака
+
+
+def _x_session():
+    from requests_oauthlib import OAuth1Session  # noqa: WPS433
+    keys = [env(k) for k in ("X_API_KEY", "X_API_SECRET", "X_ACCESS_TOKEN", "X_ACCESS_SECRET")]
+    if not all(keys):
+        raise RuntimeError("ключи X не заданы в .env (X_API_KEY, X_API_SECRET, X_ACCESS_TOKEN, X_ACCESS_SECRET)")
+    return OAuth1Session(keys[0], client_secret=keys[1], resource_owner_key=keys[2], resource_owner_secret=keys[3])
+
+
+def compose_tweet(title: str, body: str, source_url: str) -> str:
+    """Заголовок + сколько влезет фраз + ссылка, в 280 знаков."""
+    import re as _re
+    text = (body or "").strip()
+    text = _re.sub(r"\n+Source:.*$", "", text, flags=_re.S).strip()
+    budget = X_TWEET_MAX - (X_URL_LEN + 2 if source_url else 0)
+    head = (title or "").strip()
+    out = head
+    sentences = _re.split(r"(?<=[.!?])\s+", text)
+    for sent in sentences:
+        candidate = f"{out}\n\n{sent}" if out and not out.endswith(sent) else sent
+        if len(candidate) > budget:
+            break
+        out = candidate
+    if len(out) > budget:
+        out = out[:budget - 1].rstrip() + "…"
+    return f"{out}\n\n{source_url}" if source_url else out
+
+
+def publish_x(title: str, body: str, source_url: str, image_url: str | None = None) -> dict[str, Any]:
+    sess = _x_session()
+    t0 = time.time()
+    media_ids: list[str] = []
+    if image_url:
+        try:
+            img = requests.get(image_url, timeout=60)
+            img.raise_for_status()
+            up = sess.post("https://upload.twitter.com/1.1/media/upload.json",
+                           files={"media": ("image.jpg", img.content, "image/jpeg")}, timeout=60)
+            if up.status_code == 200:
+                media_ids = [str(up.json()["media_id"])]
+            else:
+                print(f"x: картинка не загрузилась ({up.status_code}): {up.text[:200]}", flush=True)
+        except Exception as e:  # noqa: BLE001
+            print(f"x: картинка пропущена: {e}", flush=True)
+    payload: dict[str, Any] = {"text": compose_tweet(title, body, source_url)}
+    if media_ids:
+        payload["media"] = {"media_ids": media_ids}
+    r = sess.post("https://api.twitter.com/2/tweets", json=payload, timeout=30)
+    if r.status_code not in (200, 201):
+        raise RuntimeError(f"x: {r.status_code} {r.text[:300]}")
+    tweet_id = r.json()["data"]["id"]
+    return {"ok": True, "tweet_id": tweet_id, "url": f"https://x.com/cosmosecology/status/{tweet_id}",
+            "duration_ms": int((time.time() - t0) * 1000),
+            "published_at": datetime.now(timezone.utc).isoformat()}
+
+
+def english_version(conn, draft_id: int) -> dict[str, Any] | None:
+    with conn.cursor() as cur:
+        cur.execute("SELECT title, body FROM pipe_drafts WHERE parent_id = %s AND lang = 'en' ORDER BY id DESC LIMIT 1",
+                    (draft_id,))
+        row = cur.fetchone()
+    if not row:
+        return None
+    return dict(row) if isinstance(row, dict) else {"title": row[0], "body": row[1]}
+
+
+# ---------------------------------------------------------------------------
 # Очередь автопубликации
 # ---------------------------------------------------------------------------
 
@@ -283,7 +361,8 @@ def main() -> None:
         from common import db
         conn = run.conn if run.conn is not None else db()
         pub = run.settings["publish"]
-        channels = {k: v for k, v in (("tg", pub.get("telegram_chat_id")), ("vk", pub.get("vk_group_id"))) if v}
+        channels = {k: v for k, v in (("tg", pub.get("telegram_chat_id")), ("vk", pub.get("vk_group_id")),
+                                      ("x", pub.get("x_account"))) if v}
         if not channels:
             run.log("каналы не настроены (pipe_settings.publish), нечего делать")
             return
@@ -332,8 +411,21 @@ def main() -> None:
                     continue
                 try:
                     image_url = d.get("image_url")
-                    res = (publish_telegram(text, str(target), image_url) if ch == "tg"
-                          else publish_vk(text, str(target), image_url))
+                    if ch == "x":
+                        en = english_version(conn, d["id"])
+                        if not en:
+                            # Перевод появляется после одобрения; без него X
+                            # ждёт следующего прогона, остальные каналы не держим.
+                            run.log("черновик %s -> x: английского перевода ещё нет, отложено", d["id"])
+                            continue
+                        source = ""
+                        m = re.search(r"Источник:\s*(\S+)", d.get("body") or "")
+                        if m:
+                            source = m.group(1)
+                        res = publish_x(en["title"], en["body"], source, image_url)
+                    else:
+                        res = (publish_telegram(text, str(target), image_url) if ch == "tg"
+                              else publish_vk(text, str(target), image_url))
                     published[ch] = res
                     run.log("черновик %s -> %s: %s", d["id"], ch, res.get("url") or res)
                 except SendTimeout as e:
