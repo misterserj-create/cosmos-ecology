@@ -233,9 +233,27 @@ def main() -> None:
                                     (f.get("_error"), f["id"]))
                     run.conn.commit()
 
-        # Поиск
+        # Поиск - платный (Perplexity), ленты бесплатные и дают то же самое.
+        # Поэтому поиск идёт не каждый день, а раз в limits.search_every_days;
+        # день считается от последнего прогона, где поиск был.
+        search_due = True
+        every = int(cfg["limits"].get("search_every_days", 1))
+        if every > 1 and run.conn is not None and not args.topic and not args.dry_run:
+            with cursor(run) as cur:
+                cur.execute("""SELECT max(started_at) AS t FROM pipe_runs
+                               WHERE stage='collect' AND ok AND log LIKE '%%тема «%%'""")
+                row = cur.fetchone()
+                last = (row["t"] if isinstance(row, dict) else row[0]) if row else None
+            if last is not None:
+                from datetime import datetime as _dt, timezone as _tz
+                if last.tzinfo is None:
+                    last = last.replace(tzinfo=_tz.utc)
+                days = (_dt.now(_tz.utc) - last).total_seconds() / 86400
+                search_due = days >= every - 0.5
+                if not search_due:
+                    run.log("поиск пропущен: последний был %.1f дн. назад, период %s дн.", days, every)
         source_ids: dict[str, int] = {}
-        if not args.no_search:
+        if not args.no_search and search_due:
             if run.conn is not None:
                 source_ids = ensure_search_sources(run, topics)
             for t in topics:

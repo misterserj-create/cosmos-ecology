@@ -61,8 +61,38 @@ def score_of(j: dict[str, Any], authority: int) -> float:
     return round(min(10.0, total + authority_bonus(authority)), 2)
 
 
+def prefilter(run: Run, f: dict[str, Any]) -> tuple[bool, str]:
+    """Дешёвый вопрос «это вообще про нашу тему?» перед дорогим судьёй.
+
+    Полный отбор на GPT-5.6 стоил 0.6 цента за находку и съедал треть
+    расхода тракта, при том что 4 из 5 находок он же и отвергал - чаще
+    всего за нерелевантность. Gemini отвечает на тот же вопрос в шесть
+    раз дешевле; к GPT идут только прошедшие.
+    """
+    cfg = run.settings
+    model = cfg["models"].get("prefilter") or cfg["models"].get("judge_b") or "google/gemini-3.7-flash"
+    res = chat(model,
+               [{"role": "system", "content": prompts.PREFILTER_SYSTEM},
+                {"role": "user", "content": prompts.PREFILTER_USER.format(
+                    title=f.get("title") or "(без заголовка)", summary=(f.get("summary") or "(нет)")[:800])}],
+               run=run, purpose="prefilter", temperature=0.0, max_tokens=120, json_mode=True)
+    try:
+        j = res.json()
+    except Exception:  # noqa: BLE001
+        return True, "предфильтр не разобран, пропускаю к судье"
+    if not isinstance(j, dict):
+        return True, "предфильтр не словарь, пропускаю к судье"
+    return bool(j.get("on_topic")), str(j.get("reason") or "")
+
+
 def judge_one(run: Run, f: dict[str, Any], accepted: list[dict[str, Any]]) -> dict[str, Any]:
     cfg = run.settings
+    on_topic, why = prefilter(run, f)
+    if not on_topic:
+        reason = f"предфильтр: {why}"
+        return {"verdict": "rejected", "score": 0.0, "reason": reason, "cost": 0.0,
+                "judge": {"prefilter_only": True, "reason": reason, "relevance": 0,
+                          "credibility": 0, "freshness": 0, "interest": 0, "novelty": 0}}
     accepted_text = "\n".join(f"- {a['title'] or a['url']} ({a['url']})" for a in accepted) or "- пока ничего"
     raw = f.get("raw") or {}
     res = chat(
