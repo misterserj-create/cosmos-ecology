@@ -46,6 +46,18 @@ def score_of(j: dict[str, Any], authority: int) -> float:
             total += w * max(0.0, min(10.0, float(j.get(k, 0))))
         except (TypeError, ValueError):
             pass
+    # Связь с темой - не один из критериев, а ворота. Первый живой прогон
+    # пропустил 36 находок из 40, и в верхушке оказались «Уэбб открывает
+    # сокровищницу», солнечное затмение и жара в Европе: авторитетный источник
+    # и свежесть перевешивали то, что к орбитальному мусору это не относится.
+    # Ниже 5 по relevance находка не проходит, какой бы ни была остальная сумма,
+    # а бонус за источник даётся только тому, что по теме.
+    try:
+        relevance = float(j.get("relevance", 0))
+    except (TypeError, ValueError):
+        relevance = 0.0
+    if relevance < 5:
+        return round(min(total, 4.9), 2)
     return round(min(10.0, total + authority_bonus(authority)), 2)
 
 
