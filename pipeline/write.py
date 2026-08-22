@@ -34,7 +34,7 @@ from typing import Any
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import prompts  # noqa: E402
-from common import Run, chat, cursor, dump, fix_long_dash, has_long_dash, word_count  # noqa: E402
+from common import Run, chat, cursor, dump, fetch_article, fix_long_dash, has_long_dash, word_count  # noqa: E402
 
 STAGE = "write"
 QUALITY_KEYS = ("language", "cliches", "coherence", "voice")
@@ -51,15 +51,29 @@ def _writer_messages(run: Run, f: dict[str, Any], fix_block: str) -> list[dict[s
             title=f.get("title") or "(без заголовка)",
             source_name=f.get("source_name") or raw.get("source_name") or "источник",
             published_at=f.get("published_at") or "дата неизвестна",
-            url=f["url"], summary=f.get("summary") or "(краткого содержания нет, опирайся на заголовок и источник)",
+            url=f["url"], summary=f.get("summary") or "(краткого содержания нет)",
+            article=f.get("_article") or "(статью открыть не удалось - есть только анонс выше; "
+                                          "пиши коротко и только то, что в нём есть)",
             angle=judge.get("angle") or "на усмотрение автора", fix_block=fix_block)},
     ]
 
 
 def write_post(run: Run, f: dict[str, Any], fix_block: str = "") -> tuple[str, dict[str, Any]]:
+    if "_article" not in f:
+        f["_article"] = fetch_article(f["url"])
+        run.log("статья: %s", f"{len(f['_article'])} знаков" if f["_article"] else "не открылась, только анонс")
     res = chat(run.settings["models"]["writer"], _writer_messages(run, f, fix_block),
                run=run, purpose="writer", temperature=0.6, max_tokens=1500)
-    body = res.text.strip().strip('"')
+    text = res.text.strip().strip('"')
+    # Первая строка ответа - русский заголовок, дальше пустая строка и пост.
+    title_ru = ""
+    if "\n" in text:
+        first, rest = text.split("\n", 1)
+        first = first.strip().lstrip("#").strip()
+        if 10 <= len(first) <= 120 and not first.endswith((".", ":")):
+            title_ru, text = first, rest.strip()
+    f["_title_ru"] = fix_long_dash(title_ru)
+    body = text
     meta = {"model": res.raw.get("model"), "cost": round(res.cost, 6), "words": word_count(body),
             "dash_fixed": has_long_dash(body)}
     body = fix_long_dash(body)
@@ -72,7 +86,7 @@ def fact_check(run: Run, f: dict[str, Any], body: str) -> dict[str, Any]:
     res = chat(run.settings["models"]["factcheck"],
                [{"role": "system", "content": prompts.FACTCHECK_SYSTEM},
                 {"role": "user", "content": prompts.FACTCHECK_USER.format(
-                    url=f["url"], summary=f.get("summary") or "(нет)", body=body)}],
+                    url=f["url"], summary=(f.get("_article") or f.get("summary") or "(нет)"), body=body)}],
                run=run, purpose="factcheck", temperature=0.1, max_tokens=1500, timeout=240)
     try:
         data = res.json()
@@ -155,7 +169,7 @@ def produce(run: Run, f: dict[str, Any], previous: str | None = None) -> dict[st
                "history": history}
     return {
         "body": body,
-        "title": (f.get("title") or "")[:300],
+        "title": (f.get("_title_ru") or f.get("title") or "")[:300],
         "status": "review" if q["passed"] else "draft",
         "quality": quality,
         "fact_check": fc,

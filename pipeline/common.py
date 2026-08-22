@@ -507,3 +507,35 @@ def cursor(run: Run) -> Iterator[Any]:
 
 def dump(obj: Any) -> None:
     print(json.dumps(obj, ensure_ascii=False, indent=2, default=str))
+
+
+# ---------------------------------------------------------------------------
+# Полный текст статьи по ссылке
+# ---------------------------------------------------------------------------
+# Ленты отдают только анонс в одну-две фразы. Первый живой прогон показал,
+# что автор на таком входе честно пишет четыре абзаца «в источнике одна
+# вводная фраза, судить невозможно». Поэтому перед написанием статья
+# открывается целиком; если не открылась - автор получает анонс, но знает,
+# что это анонс, и пишет коротко.
+
+ARTICLE_MAX_CHARS = 12000
+
+
+def fetch_article(url: str, timeout: int = 25) -> str:
+    try:
+        import trafilatura  # noqa: WPS433
+    except ImportError:
+        return ""
+    try:
+        r = requests.get(url, timeout=timeout, headers={
+            "User-Agent": "Mozilla/5.0 (compatible; CosmosEcologyBot/1.0; +https://cosmosecology.ru)"})
+        if r.status_code != 200 or not r.text:
+            return ""
+        text = trafilatura.extract(r.text, url=url, include_comments=False,
+                                   include_tables=False, favor_precision=True) or ""
+    except Exception:  # noqa: BLE001
+        return ""
+    text = text.strip()
+    if len(text) < 300:
+        return ""
+    return text[:ARTICLE_MAX_CHARS]
