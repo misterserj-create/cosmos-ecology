@@ -109,6 +109,18 @@ def translate_lang(run: Run, body: str, lang: str) -> dict[str, Any]:
             "cost": round(run.cost - cost0, 6)}
 
 
+def split_title(text: str, source_title: str | None) -> tuple[str, str]:
+    """Первая строка перевода - заголовок, если оригинал шёл с заголовком."""
+    text = (text or "").strip()
+    if not source_title or "\n" not in text:
+        return "", text
+    first, rest = text.split("\n", 1)
+    first = first.strip().strip('"«»')
+    if 5 <= len(first) <= 160 and not first.endswith("."):
+        return first, rest.strip()
+    return "", text
+
+
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--dry-run", action="store_true")
@@ -143,7 +155,13 @@ def main() -> None:
                 if lang in done.get(d["id"], set()) and not args.dry_run:
                     continue
                 try:
-                    r = translate_lang(run, d["body"], lang)
+                    # Заголовок переводится вместе с телом первой строкой:
+                    # отдельный вызов дороже и теряет контекст, а без
+                    # перевода заголовок оставался русским во всех языках.
+                    src = f"{(d.get('title') or '').strip()}\n\n{d['body']}" if d.get("title") else d["body"]
+                    r = translate_lang(run, src, lang)
+                    tr_title, tr_body = split_title(r["body"], d.get("title"))
+                    r["body"], r["title"] = tr_body, tr_title
                 except Exception as e:  # noqa: BLE001
                     run.log("черновик %s, %s: ошибка %s", d["id"], lang, e)
                     continue
@@ -156,7 +174,7 @@ def main() -> None:
                     cur.execute(
                         "INSERT INTO pipe_drafts (finding_id, parent_id, lang, title, body, status, quality, created_by, model_cost) "
                         "VALUES (%s, %s, %s, %s, %s, 'approved', %s::jsonb, %s, %s)",
-                        (d.get("finding_id"), d["id"], lang, d.get("title") or "", r["body"],
+                        (d.get("finding_id"), d["id"], lang, r.get("title") or d.get("title") or "", r["body"],
                          json.dumps(r["quality"], ensure_ascii=False, default=str), r["created_by"], r["cost"]))
                     cur.execute("UPDATE pipe_drafts SET model_cost = model_cost + %s WHERE id = %s", (r["cost"], d["id"]))
                 run.conn.commit()
