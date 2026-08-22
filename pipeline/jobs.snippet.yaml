@@ -1,0 +1,35 @@
+# Фрагмент для /root/etc/jobs.yaml (highazure). Вставить в список entries:
+# и применить `python3 /root/bin/cron_manifest.py --apply`. Напрямую crontab
+# не править: хук это блокирует, а суточная проверка заметит расхождение.
+#
+# CRON_TZ действует на все последующие строки: фрагмент вставлять после
+# какого-нибудь блока с CRON_TZ=Europe/Moscow или держать свою директиву,
+# как здесь.
+#
+# run_job.sh даёт замок (один прогон за раз), таймаут и строку в job_runs.
+# Алерт при падении этапа шлёт сам этап (common.Run -> TG_ALERTS_CHAT_ID
+# из /opt/cosmos-ecology/pipeline/.env), отдельный сторож не нужен.
+#
+# Ключи читаются из .env пакета самим скриптом, `set -a; . .env` в строке
+# крона не нужен.
+
+- kind: blank
+  raw: ''
+- kind: comment
+  raw: '# Экология Космоса: контент-тракт (/opt/cosmos-ecology/pipeline). Добавлено 2026-08-22'
+- kind: env
+  raw: CRON_TZ=Europe/Moscow
+- kind: job
+  raw: 0 7 * * * /root/bin/run_job.sh cosmos_pipeline_run_all --timeout 3000 -- /usr/bin/python3 -u /opt/cosmos-ecology/pipeline/run_all.py >> /var/log/cosmos_pipeline.log 2>&1
+  schedule: 0 7 * * *
+  name: cosmos_pipeline_run_all
+  observed: true
+  timeout: 3000
+  log: /var/log/cosmos_pipeline.log
+- kind: job
+  raw: '*/30 * * * * /root/bin/run_job.sh cosmos_pipeline_publish --timeout 600 -- /usr/bin/python3 -u /opt/cosmos-ecology/pipeline/publish.py >> /var/log/cosmos_pipeline_publish.log 2>&1'
+  schedule: '*/30 * * * *'
+  name: cosmos_pipeline_publish
+  observed: true
+  timeout: 600
+  log: /var/log/cosmos_pipeline_publish.log

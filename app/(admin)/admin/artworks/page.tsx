@@ -32,6 +32,7 @@ export default function ArtworksAdmin() {
           <h1 style={h1}>Работы ({rows.length})</h1>
           <Link href="/admin/events" style={navLink}>→ События</Link>
           <Link href="/admin/journal" style={navLink}>→ Журнал</Link>
+          <Link href="/admin/pipeline" style={navLink}>→ Тракт</Link>
         </div>
         <Link href="/admin/artworks/new" style={addBtn}>+ Добавить</Link>
       </div>

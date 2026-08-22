@@ -40,4 +40,11 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 .env.production
+<<<<<<< HEAD
 __pycache__/
+=======
+
+# контент-тракт
+/pipeline/.env
+/pipeline/__pycache__/
+>>>>>>> pipeline
