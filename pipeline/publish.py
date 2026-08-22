@@ -13,10 +13,17 @@
 канал выключен). Токены из .env: TELEGRAM_BOT_TOKEN, VK_USER_ACCESS_TOKEN.
 
 Транспорт повторяет resonance_publish Резонанса (tg.py, vk.py), но на
-requests и без картинок: посты тракта текстовые, ссылка на источник в конце
-даёт превью в Telegram. Семантика ошибок сохранена: обрыв до отправки -
-повтор безопасен; обрыв после отправки - возможен дубль, пост помечается
-ошибкой и НЕ переотправляется автоматически, решает человек.
+requests. Семантика ошибок сохранена: обрыв до отправки - повтор безопасен;
+обрыв после отправки - возможен дубль, пост помечается ошибкой и НЕ
+переотправляется автоматически, решает человек.
+
+Картинка (pipe_drafts.image_url, ставит illustrate.py) - необязательна: без
+неё каналы получают тот же текстовый пост, что раньше. С картинкой в
+Telegram уходит sendPhoto: если текст умещается в подпись (1024 знака) -
+одним сообщением, иначе фото без подписи и отдельным sendMessage полный
+текст следом. В ВК фото грузится через vk_upload_photos (из
+publish_journal.py, тот же приём, что для журнала) и прикладывается к
+wall.post.
 
 Результат пишется в published_to: {"tg": {"ok": true, "message_id": ..,
 "url": ..}, "vk": {...}}. Если один канал прошёл, а второй нет, черновик
@@ -42,6 +49,7 @@ from common import Run, cursor, dump, env, has_long_dash  # noqa: E402
 
 STAGE = "publish"
 TG_TEXT_LIMIT = 4096
+TG_CAPTION_LIMIT = 1024
 VK_API = "https://api.vk.com/method"
 VK_VERSION = "5.131"
 
@@ -107,17 +115,27 @@ def tg_post_url(chat_id: str, message_id: int) -> str:
     return ""
 
 
-def publish_telegram(text: str, chat_id: str) -> dict[str, Any]:
+def publish_telegram(text: str, chat_id: str, image_url: str | None = None) -> dict[str, Any]:
     token = env("TELEGRAM_BOT_TOKEN")
     if not token:
         raise RuntimeError("TELEGRAM_BOT_TOKEN не задан")
-    first_id = None
     t0 = time.time()
-    for i, chunk in enumerate(_text_chunks(text)):
-        res = _tg_call(token, "sendMessage", {"chat_id": chat_id, "text": chunk,
-                                              "disable_web_page_preview": i > 0})
-        if first_id is None:
-            first_id = res["message_id"]
+    if not image_url:
+        first_id = None
+        for i, chunk in enumerate(_text_chunks(text)):
+            res = _tg_call(token, "sendMessage", {"chat_id": chat_id, "text": chunk,
+                                                  "disable_web_page_preview": i > 0})
+            if first_id is None:
+                first_id = res["message_id"]
+    elif len(text) <= TG_CAPTION_LIMIT:
+        res = _tg_call(token, "sendPhoto", {"chat_id": chat_id, "photo": image_url, "caption": text})
+        first_id = res["message_id"]
+    else:
+        res = _tg_call(token, "sendPhoto", {"chat_id": chat_id, "photo": image_url})
+        first_id = res["message_id"]
+        for i, chunk in enumerate(_text_chunks(text)):
+            _tg_call(token, "sendMessage", {"chat_id": chat_id, "text": chunk,
+                                            "disable_web_page_preview": i > 0})
     return {"ok": True, "message_id": first_id, "url": tg_post_url(chat_id, first_id),
             "duration_ms": int((time.time() - t0) * 1000),
             "published_at": datetime.now(timezone.utc).isoformat()}
@@ -154,15 +172,21 @@ def _vk_check(r: requests.Response) -> dict[str, Any]:
     return data["response"]
 
 
-def publish_vk(text: str, group_id: str) -> dict[str, Any]:
+def publish_vk(text: str, group_id: str, image_url: str | None = None) -> dict[str, Any]:
     token = vk_token()
     if not token:
         raise RuntimeError("VK_USER_ACCESS_TOKEN не задан")
     gid = int(str(group_id).lstrip("-"))
     t0 = time.time()
+    attachments = ""
+    if image_url:
+        # publish_journal.py решает ту же задачу для журнала - переиспользуем
+        # её загрузку фото, а не копируем логику сюда.
+        from publish_journal import vk_upload_photos  # noqa: WPS433 (ленивый импорт против цикла)
+        attachments = ",".join(vk_upload_photos(token, gid, [image_url]))
     try:
         r = requests.post(f"{VK_API}/wall.post", data={
-            "owner_id": -gid, "from_group": 1, "message": text[:16000],
+            "owner_id": -gid, "from_group": 1, "message": text[:16000], "attachments": attachments,
             "access_token": token, "v": VK_VERSION}, timeout=15)
     except (requests.ConnectionError, requests.exceptions.ConnectTimeout) as e:
         raise RuntimeError(f"vk: соединение не установлено: {e}")
@@ -231,7 +255,9 @@ def main() -> None:
                 if published.get(ch, {}).get("ok"):
                     continue
                 try:
-                    res = publish_telegram(text, str(target)) if ch == "tg" else publish_vk(text, str(target))
+                    image_url = d.get("image_url")
+                    res = (publish_telegram(text, str(target), image_url) if ch == "tg"
+                          else publish_vk(text, str(target), image_url))
                     published[ch] = res
                     run.log("черновик %s -> %s: %s", d["id"], ch, res.get("url") or res)
                 except SendTimeout as e:

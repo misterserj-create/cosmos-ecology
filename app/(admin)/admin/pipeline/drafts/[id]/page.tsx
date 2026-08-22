@@ -17,6 +17,7 @@ type Draft = {
   published_to: Record<string, { ok?: boolean; url?: string; error?: string; needs_check?: boolean } | string>
   source_url: string | null; source_title: string | null; source_summary: string | null; judge: { angle?: string; reason?: string } | null
   translations: Translation[]
+  image_url: string | null; image_prompt: string | null; image_cost: string | null
 }
 
 const LANG_NAMES: Record<string, string> = { ru: 'Русский', en: 'English', es: 'Español', fr: 'Français', de: 'Deutsch', zh: '中文', ja: '日本語' }
@@ -47,6 +48,7 @@ export default function DraftPage({ params }: { params: Promise<{ id: string }> 
     await load()
     if (action === 'publish_now') setMsg('Одобрено и помечено к публикации. Публикует publish.py по крону (каждые 30 минут).')
     if (action === 'rewrite') setMsg('Помечено на переписывание. write.py перепишет при следующем прогоне (07:00) или вручную: python3 write.py')
+    if (action === 'regen_image') setMsg('Картинка сброшена. illustrate.py сделает новую при следующем прогоне или вручную: python3 illustrate.py --draft ' + id)
   }
 
   if (!d) return <PipelineShell title="Черновик">{msg ? <div style={{ color: '#e66' }}>{msg}</div> : <div style={muted}>Загрузка…</div>}</PipelineShell>
@@ -139,6 +141,20 @@ export default function DraftPage({ params }: { params: Promise<{ id: string }> 
             {d.source_url && <a href={d.source_url} target="_blank" rel="noreferrer" style={{ color: '#c9a84c', fontSize: '0.85rem', wordBreak: 'break-all' }}>{d.source_title || d.source_url}</a>}
             {d.source_summary && <p style={{ ...muted, color: '#999', lineHeight: 1.5 }}>{d.source_summary}</p>}
             {d.judge?.angle && <div style={muted}>угол: {d.judge.angle}</div>}
+          </div>
+
+          <div style={card}>
+            <div style={h3}>Иллюстрация</div>
+            {d.image_url ? (
+              <>
+                <img src={d.image_url} alt="" style={{ width: '100%', borderRadius: 6, display: 'block', marginBottom: 8 }} />
+                {d.image_prompt && <p style={{ ...muted, color: '#999', lineHeight: 1.5 }}>{d.image_prompt}</p>}
+                <div style={muted}>{d.image_cost ? usd(d.image_cost) : ''}</div>
+              </>
+            ) : (
+              <div style={muted}>картинки нет: illustrate.py ещё не дошёл или не прошла проверку</div>
+            )}
+            {d.status !== 'published' && <button onClick={() => act('regen_image')} style={{ ...btn, marginTop: 10 }}>{d.image_url ? 'Перегенерировать' : 'Сгенерировать'}</button>}
           </div>
 
           <div style={card}>

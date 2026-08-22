@@ -138,6 +138,7 @@ export async function pipeDraft(id: number) {
      FROM pipe_drafts d LEFT JOIN pipe_findings f ON f.id = d.finding_id WHERE d.id = $1`,
     [id],
   )
+  // image_url/image_prompt/image_cost приходят через SELECT *, отдельно доставать не нужно.
   if (!rows[0]) return null
   const translations = await q(
     `SELECT id, lang, body, status, quality, created_by, created_at FROM pipe_drafts WHERE parent_id = $1 ORDER BY lang`,
@@ -146,7 +147,7 @@ export async function pipeDraft(id: number) {
   return { ...rows[0], translations }
 }
 
-export type DraftAction = 'approve' | 'reject' | 'rewrite' | 'publish_now' | 'edit' | 'unpublish_flag'
+export type DraftAction = 'approve' | 'reject' | 'rewrite' | 'publish_now' | 'edit' | 'unpublish_flag' | 'regen_image'
 
 export async function pipeDraftAction(id: number, action: DraftAction, payload: { body?: string; title?: string } = {}, who = 'admin') {
   switch (action) {
@@ -185,6 +186,15 @@ export async function pipeDraftAction(id: number, action: DraftAction, payload: 
       break
     case 'unpublish_flag':
       await q(`UPDATE pipe_drafts SET published_to = published_to - 'publish_now' WHERE id = $1`, [id])
+      break
+    case 'regen_image':
+      // Сайт крутится в контейнере, illustrate.py - на хосте (тот же приём,
+      // что у publish_now): здесь только сброс, картинку сделает ближайший
+      // прогон крона или python3 illustrate.py --draft N руками.
+      await q(
+        `UPDATE pipe_drafts SET image_url = NULL, image_prompt = NULL, image_cost = NULL WHERE id = $1`,
+        [id],
+      )
       break
   }
 }

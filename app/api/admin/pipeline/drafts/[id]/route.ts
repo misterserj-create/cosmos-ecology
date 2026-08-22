@@ -4,7 +4,7 @@ import { pipeDraft, pipeDraftAction, type DraftAction } from '@/lib/pipeline'
 
 export const dynamic = 'force-dynamic'
 
-const ACTIONS: DraftAction[] = ['approve', 'reject', 'rewrite', 'publish_now', 'edit', 'unpublish_flag']
+const ACTIONS: DraftAction[] = ['approve', 'reject', 'rewrite', 'publish_now', 'edit', 'unpublish_flag', 'regen_image']
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   return guarded(req, async () => {

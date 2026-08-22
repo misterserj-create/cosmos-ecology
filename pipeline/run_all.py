@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
-"""Суточный прогон: collect -> judge -> write -> translate. Для крона.
+"""Суточный прогон: collect -> judge -> write -> illustrate -> translate. Для крона.
 
     python3 run_all.py
     python3 run_all.py --skip translate
+    python3 run_all.py --skip illustrate
     python3 run_all.py --dry-run        # каждому этапу передаётся --dry-run
 
 Каждый этап запускается отдельным процессом: падение одного не мешает
@@ -20,7 +21,7 @@ import time
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
-STAGES = ["collect", "judge", "write", "translate"]
+STAGES = ["collect", "judge", "write", "illustrate", "translate"]
 
 
 def main() -> int:
