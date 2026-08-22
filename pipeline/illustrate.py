@@ -231,6 +231,8 @@ def stock_search(query: str) -> list[dict[str, str]]:
                              params={"query": query, "per_page": STOCK_CANDIDATES, "orientation": "landscape"},
                              timeout=20)
             for ph in (r.json().get("photos") or []):
+                if (ph.get("width") or 0) < (ph.get("height") or 1) * 1.2:
+                    continue  # вертикальные и квадратные в ленте 16:9 не работают
                 out.append({"url": ph["src"].get("large2x") or ph["src"]["large"],
                             "credit": f"Фото: {ph.get('photographer', '')}, Pexels", "source": "pexels"})
         except Exception as e:  # noqa: BLE001
@@ -243,6 +245,8 @@ def stock_search(query: str) -> list[dict[str, str]]:
                              params={"query": query, "per_page": STOCK_CANDIDATES, "orientation": "landscape"},
                              timeout=20)
             for ph in (r.json().get("results") or []):
+                if (ph.get("width") or 0) < (ph.get("height") or 1) * 1.2:
+                    continue
                 out.append({"url": ph["urls"].get("regular") or ph["urls"]["full"],
                             "credit": f"Фото: {ph['user'].get('name', '')}, Unsplash", "source": "unsplash"})
         except Exception as e:  # noqa: BLE001
