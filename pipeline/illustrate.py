@@ -196,6 +196,102 @@ def make_prompt(run: Run, d: dict[str, Any], fix_block: str = "") -> str:
     return res.text.strip().strip('"')
 
 
+
+# ---------------------------------------------------------------------------
+# Фотостоки: первая попытка перед генерацией
+# ---------------------------------------------------------------------------
+# Pexels и Unsplash с highazure отвечают (ключи в /root/.pexels_key и
+# /root/.unsplash_key, как у Резонанса; можно переопределить PEXELS_KEY /
+# UNSPLASH_KEY в .env). Реальное фото лучше генерации там, где сток честен:
+# Земля с орбиты, спутники, электроника крупно. Где сток врёт (мусор на земле
+# вместо орбитального, пробирки вместо ламп) - модель сама отдаёт пустой
+# запрос, и в дело идёт генерация. Каждый кандидат проходит ту же проверку
+# зрением, что и сгенерированный кадр.
+
+STOCK_CANDIDATES = 4
+
+
+def _stock_key(name: str, path: str) -> str:
+    v = env(name)
+    if v:
+        return v
+    try:
+        return Path(path).read_text().strip()
+    except OSError:
+        return ""
+
+
+def stock_search(query: str) -> list[dict[str, str]]:
+    """Кандидаты с обоих стоков: [{url, credit, source}]."""
+    out: list[dict[str, str]] = []
+    pk = _stock_key("PEXELS_KEY", "/root/.pexels_key")
+    if pk:
+        try:
+            r = requests.get("https://api.pexels.com/v1/search", headers={"Authorization": pk},
+                             params={"query": query, "per_page": STOCK_CANDIDATES, "orientation": "landscape"},
+                             timeout=20)
+            for ph in (r.json().get("photos") or []):
+                out.append({"url": ph["src"].get("large2x") or ph["src"]["large"],
+                            "credit": f"Фото: {ph.get('photographer', '')}, Pexels", "source": "pexels"})
+        except Exception as e:  # noqa: BLE001
+            print(f"pexels: {e}", flush=True)
+    uk = _stock_key("UNSPLASH_KEY", "/root/.unsplash_key")
+    if uk:
+        try:
+            r = requests.get("https://api.unsplash.com/search/photos",
+                             headers={"Authorization": f"Client-ID {uk}"},
+                             params={"query": query, "per_page": STOCK_CANDIDATES, "orientation": "landscape"},
+                             timeout=20)
+            for ph in (r.json().get("results") or []):
+                out.append({"url": ph["urls"].get("regular") or ph["urls"]["full"],
+                            "credit": f"Фото: {ph['user'].get('name', '')}, Unsplash", "source": "unsplash"})
+        except Exception as e:  # noqa: BLE001
+            print(f"unsplash: {e}", flush=True)
+    return out
+
+
+def stock_pick(run: Run, d: dict[str, Any]) -> dict[str, Any] | None:
+    """Пробует найти честное стоковое фото. Возвращает тот же словарь, что
+    illustrate_draft, плюс credit, либо None."""
+    writer = run.settings["models"]["writer"]
+    vision = run.settings["models"]["judge_b"]
+    res = chat(writer, [{"role": "system", "content": prompts.STOCK_QUERY_SYSTEM},
+                        {"role": "user", "content": f"Заголовок: {d.get('title')}\n\n{d.get('body')}"}],
+               run=run, purpose="illustrate:stock_query", temperature=0.3, max_tokens=150, json_mode=True)
+    try:
+        q = res.json()
+    except Exception:  # noqa: BLE001
+        return None
+    query = (q.get("query") or "").strip()
+    if not query:
+        run.log("черновик %s: сток не подходит (%s), идём в генерацию", d["id"], q.get("expect"))
+        return None
+    cands = stock_search(query)
+    run.log("черновик %s: сток по «%s», кандидатов %s", d["id"], query, len(cands))
+    for c in cands:
+        try:
+            img = requests.get(c["url"], timeout=60)
+            img.raise_for_status()
+        except Exception:  # noqa: BLE001
+            continue
+        data = img.content
+        check = vision_check(run, vision, data, "image/jpeg")
+        if check.get("has_forbidden"):
+            continue
+        pick = chat(vision, [{"role": "user", "content": [
+            {"type": "image_url", "image_url": {"url": c["url"]}},
+            {"type": "text", "text": prompts.STOCK_PICK_USER.format(title=d.get("title"), expect=q.get("expect"))},
+        ]}], run=run, purpose="illustrate:stock_pick", temperature=0.0, max_tokens=200, json_mode=True)
+        try:
+            verdict = pick.json()
+        except Exception:  # noqa: BLE001
+            continue
+        if verdict.get("ok"):
+            run.log("черновик %s: сток принят (%s): %s", d["id"], c["source"], verdict.get("reason", "")[:80])
+            return {"prompt": f"stock:{c['source']}:{query}", "bytes": data, "source_url": c["url"], "credit": c["credit"]}
+    run.log("черновик %s: ни один стоковый кандидат не прошёл, идём в генерацию", d["id"])
+    return None
+
 # ---------------------------------------------------------------------------
 # Цепочка на один черновик
 # ---------------------------------------------------------------------------
@@ -204,6 +300,15 @@ def illustrate_draft(run: Run, d: dict[str, Any]) -> dict[str, Any] | None:
     """Возвращает {"image_url", "image_prompt", "cost"} при успехе, иначе None
     (причина уже в run.log)."""
     vision_model = run.settings["models"]["judge_b"]
+    # Сначала настоящее фото со стока, генерация - если стокового сюжета нет.
+    if run.settings.get("images", {}).get("stock_first", True):
+        try:
+            picked = stock_pick(run, d)
+        except Exception as e:  # noqa: BLE001
+            run.log("черновик %s: сток не сработал (%s), идём в генерацию", d["id"], e)
+            picked = None
+        if picked:
+            return picked
     fix_block = ""
     for attempt in range(1, MAX_ATTEMPTS + 1):
         prompt_text = make_prompt(run, d, fix_block)
@@ -276,7 +381,20 @@ def main() -> None:
             with cursor(run) as cur:
                 cur.execute(
                     "UPDATE pipe_drafts SET image_url = %s, image_prompt = %s, image_cost = %s WHERE id = %s",
-                    (image_url, result["prompt"], IMAGE_COST_USD, d["id"]))
+                    (image_url, result["prompt"], 0.0 if result.get("credit") else IMAGE_COST_USD, d["id"]))
+                # Стоковое фото требует подписи автора по лицензии. Подпись
+                # дописывается в конец поста перед источником, чтобы уйти во
+                # все площадки вместе с текстом.
+                if result.get("credit"):
+                    cur.execute("SELECT body FROM pipe_drafts WHERE id = %s", (d["id"],))
+                    row = cur.fetchone()
+                    body = (row["body"] if isinstance(row, dict) else row[0]) if row else ""
+                    if body and result["credit"] not in body:
+                        if "\nИсточник:" in body:
+                            body = body.replace("\nИсточник:", f"\n{result['credit']}\nИсточник:", 1)
+                        else:
+                            body = body.rstrip() + f"\n\n{result['credit']}"
+                        cur.execute("UPDATE pipe_drafts SET body = %s WHERE id = %s", (body, d["id"]))
             run.conn.commit()
             run.items_out += 1
             run.log("черновик %s: картинка %s", d["id"], image_url)
