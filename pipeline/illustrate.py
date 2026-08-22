@@ -262,6 +262,8 @@ def stock_pick(run: Run, d: dict[str, Any]) -> dict[str, Any] | None:
         q = res.json()
     except Exception:  # noqa: BLE001
         return None
+    if not isinstance(q, dict):
+        return None
     query = (q.get("query") or "").strip()
     if not query:
         run.log("черновик %s: сток не подходит (%s), идём в генерацию", d["id"], q.get("expect"))
@@ -285,6 +287,11 @@ def stock_pick(run: Run, d: dict[str, Any]) -> dict[str, Any] | None:
         try:
             verdict = pick.json()
         except Exception:  # noqa: BLE001
+            continue
+        # Модель иногда отдаёт не словарь, а строку или список - такой
+        # кандидат просто не принят, следующий.
+        if not isinstance(verdict, dict):
+            run.log("черновик %s: ответ отбора стока не словарь (%r), кандидат пропущен", d["id"], str(verdict)[:60])
             continue
         if verdict.get("ok"):
             run.log("черновик %s: сток принят (%s): %s", d["id"], c["source"], verdict.get("reason", "")[:80])
