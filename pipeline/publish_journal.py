@@ -42,7 +42,8 @@ def load_settings(conn) -> dict[str, str]:
     with conn.cursor() as cur:
         cur.execute("SELECT value FROM pipeline.pipe_settings WHERE key='publish'")
         row = cur.fetchone()
-    v = row[0] if row else {}
+    # Курсор в common.db() отдаёт словари.
+    v = (row["value"] if isinstance(row, dict) else row[0]) if row else {}
     return {"tg": str(v.get("telegram_chat_id") or ""), "vk": str(v.get("vk_group_id") or "")}
 
 
@@ -55,8 +56,7 @@ def fetch_posts(conn, ids: list[int] | None, channel: str, limit: int) -> list[d
         else:
             cur.execute("""SELECT id, slug, title, excerpt, body, cover_url, gallery_urls, published_at, tags
                            FROM journal_posts WHERE published ORDER BY published_at DESC""")
-        cols = [d[0] for d in cur.description]
-        rows = [dict(zip(cols, r)) for r in cur.fetchall()]
+        rows = [dict(r) for r in cur.fetchall()]
     out = []
     for r in rows:
         if any(str(t).startswith(tag_prefix) for t in (r.get("tags") or [])):
