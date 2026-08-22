@@ -63,7 +63,7 @@ def write_post(run: Run, f: dict[str, Any], fix_block: str = "") -> tuple[str, d
         f["_article"] = fetch_article(f["url"])
         run.log("статья: %s", f"{len(f['_article'])} знаков" if f["_article"] else "не открылась, только анонс")
     res = chat(run.settings["models"]["writer"], _writer_messages(run, f, fix_block),
-               run=run, purpose="writer", temperature=0.6, max_tokens=1500)
+               run=run, purpose="writer", temperature=0.6, max_tokens=2500)
     text = res.text.strip().strip('"')
     # Первая строка ответа - русский заголовок, дальше пустая строка и пост.
     title_ru = ""
