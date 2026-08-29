@@ -10,7 +10,7 @@
   auto                  - ещё и status=review (прошли судей качества без человека).
 
 Каналы: telegram_chat_id и vk_group_id из pipe_settings.publish (пустое =
-канал выключен). Токены из .env: TELEGRAM_BOT_TOKEN, VK_USER_ACCESS_TOKEN.
+канал выключен). Токены из .env: COSMOS_TG_BOT_TOKEN (свой бот канала, НЕ TELEGRAM_BOT_TOKEN - тот общий, инфраструктурный, для алертов common.py.alert()), VK_USER_ACCESS_TOKEN.
 
 Транспорт повторяет resonance_publish Резонанса (tg.py, vk.py), но на
 requests. Семантика ошибок сохранена: обрыв до отправки - повтор безопасен;
@@ -116,9 +116,9 @@ def tg_post_url(chat_id: str, message_id: int) -> str:
 
 
 def publish_telegram(text: str, chat_id: str, image_url: str | None = None) -> dict[str, Any]:
-    token = env("TELEGRAM_BOT_TOKEN")
+    token = env("COSMOS_TG_BOT_TOKEN")
     if not token:
-        raise RuntimeError("TELEGRAM_BOT_TOKEN не задан")
+        raise RuntimeError("COSMOS_TG_BOT_TOKEN не задан")
     t0 = time.time()
     if not image_url:
         first_id = None

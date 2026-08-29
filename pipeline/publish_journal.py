@@ -152,7 +152,7 @@ def publish_vk_post(p: dict[str, Any], group_id: str, dry: bool) -> dict[str, An
 # ---------------------------------------------------------------------------
 
 def publish_tg_post(p: dict[str, Any], chat_id: str, dry: bool) -> dict[str, Any]:
-    token = env("TELEGRAM_BOT_TOKEN")
+    token = env("COSMOS_TG_BOT_TOKEN")
     text = compose(p)
     urls = photos_of(p, 10)
     if dry:

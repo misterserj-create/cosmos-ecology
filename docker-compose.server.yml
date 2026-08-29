@@ -1,0 +1,15 @@
+services:
+  cosmos-ecology:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: cosmos-ecology
+    env_file: .env
+    restart: unless-stopped
+    networks:
+      - resonance_net
+
+networks:
+  resonance_net:
+    external: true
+    name: resonance_factory_resonance_net
