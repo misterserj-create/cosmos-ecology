@@ -124,7 +124,9 @@
     "noPhoto": "pas de photo",
     "arrowsHint": "← / → entre les œuvres",
     "close": "Fermer",
-    "zoomHint": "Cliquez pour agrandir"
+    "zoomHint": "Cliquez pour agrandir",
+    "zoomFit": "cliquez pour ajuster",
+    "zoomFull": "cliquez pour la taille réelle"
   },
   "team": {
     "label": "Participants",

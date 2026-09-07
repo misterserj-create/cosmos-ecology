@@ -20,9 +20,13 @@ export default function Gallery({ artworks, dict }: { artworks: Artwork[]; dict:
   // Приближение в просмотре работы. Объекты собраны из сотен мелких деталей,
   // и рассмотреть их вблизи это то единственное, чего не даёт выставочный зал.
   const [zoomed, setZoomed] = useState(false)
+  // Второй шаг приближения: кадр в натуральную величину с прокруткой. Без него
+  // «во весь экран» всё равно вписывает работу в окно и деталей не видно.
+  const [full, setFull] = useState(false)
   const gridRef = useRef<HTMLDivElement>(null)
 
-  useEffect(() => { setZoomed(false) }, [selected])
+  useEffect(() => { setZoomed(false); setFull(false) }, [selected])
+  useEffect(() => { if (!zoomed) setFull(false) }, [zoomed])
 
   const filtered = useMemo(() => {
     const match = AUTHOR_FILTERS.find(f => f.id === filterId)?.match ?? null
@@ -163,19 +167,25 @@ export default function Gallery({ artworks, dict }: { artworks: Artwork[]; dict:
       {/* Приближение: работа во весь экран, поверх лайтбокса */}
       {selected && zoomed && (
         <div
-          onClick={() => setZoomed(false)}
-          style={{ position: "fixed", inset: 0, zIndex: 300, background: "#000", display: "flex", alignItems: "center", justifyContent: "center", cursor: "zoom-out", overflow: "auto" }}
+          onClick={() => (full ? setFull(false) : setZoomed(false))}
+          style={{ position: "fixed", inset: 0, zIndex: 300, background: "#000", display: "flex", alignItems: full ? "flex-start" : "center", justifyContent: full ? "flex-start" : "center", overflow: "auto" }}
         >
-          {/* Обычный img, а не next/image: здесь нужен родной размер кадра,
-              который зритель может увеличить жестом или колесом мыши. */}
+          {/* Обычный img, а не next/image: в натуральном размере кадр должен
+              приходить как есть, иначе рассмотреть отдельную деталь нельзя, а
+              ради этого приближение и заводилось. */}
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={selected.fullUrl}
             alt={selected.title}
-            style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain" }}
+            onClick={e => { e.stopPropagation(); setFull(v => !v) }}
+            style={
+              full
+                ? { maxWidth: "none", width: "auto", height: "auto", cursor: "zoom-out" }
+                : { maxWidth: "100%", maxHeight: "100%", objectFit: "contain", cursor: "zoom-in" }
+            }
           />
-          <div style={{ position: "absolute", left: 0, right: 0, bottom: 18, textAlign: "center", color: "#777", fontSize: "0.68rem", letterSpacing: "0.18em", textTransform: "uppercase", pointerEvents: "none" }}>
-            {selected.artId} · {selected.title}
+          <div style={{ position: "fixed", left: 0, right: 0, bottom: 18, textAlign: "center", color: "#777", fontSize: "0.68rem", letterSpacing: "0.18em", textTransform: "uppercase", pointerEvents: "none" }}>
+            {selected.artId} · {selected.title} · {full ? dict.zoomFit : dict.zoomFull}
           </div>
         </div>
       )}

@@ -124,7 +124,9 @@
     "noPhoto": "写真なし",
     "arrowsHint": "← / → で作品を移動",
     "close": "閉じる",
-    "zoomHint": "クリックで拡大"
+    "zoomHint": "クリックで拡大",
+    "zoomFit": "クリックで全体表示",
+    "zoomFull": "クリックで原寸表示"
   },
   "team": {
     "label": "参加者",

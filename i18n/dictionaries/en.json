@@ -124,7 +124,9 @@
     "noPhoto": "no photo",
     "arrowsHint": "← / → between works",
     "close": "Close",
-    "zoomHint": "Click to look closer"
+    "zoomHint": "Click to look closer",
+    "zoomFit": "click to fit",
+    "zoomFull": "click for full size"
   },
   "team": {
     "label": "Participants",

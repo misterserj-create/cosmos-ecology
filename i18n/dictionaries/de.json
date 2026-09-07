@@ -124,7 +124,9 @@
     "noPhoto": "kein Foto",
     "arrowsHint": "← / → zwischen den Werken",
     "close": "Schließen",
-    "zoomHint": "Zum Vergrößern klicken"
+    "zoomHint": "Zum Vergrößern klicken",
+    "zoomFit": "klicken zum Einpassen",
+    "zoomFull": "klicken für Originalgröße"
   },
   "team": {
     "label": "Mitwirkende",

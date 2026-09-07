@@ -124,7 +124,9 @@
     "noPhoto": "暂无图片",
     "arrowsHint": "← / → 切换作品",
     "close": "关闭",
-    "zoomHint": "点击放大"
+    "zoomHint": "点击放大",
+    "zoomFit": "点击以适应屏幕",
+    "zoomFull": "点击查看原始尺寸"
   },
   "team": {
     "label": "参与者",
