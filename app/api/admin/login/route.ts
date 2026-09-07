@@ -3,7 +3,12 @@ import { createHash } from 'crypto'
 
 export async function POST(req: NextRequest) {
   const { password } = await req.json()
-  const expected = process.env.ADMIN_PASSWORD || 'cosmos2026'
+  const expected = process.env.ADMIN_PASSWORD
+  // Пароля нет в окружении - вход закрыт. Запасное значение в коде публичного
+  // репозитория равносильно открытой админке, поэтому его здесь нет.
+  if (!expected) {
+    return NextResponse.json({ error: 'Вход не настроен' }, { status: 503 })
+  }
   if (password !== expected) {
     return NextResponse.json({ error: 'Неверный пароль' }, { status: 401 })
   }

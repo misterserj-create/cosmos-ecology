@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Публикация одобренных русских постов в Telegram и ВКонтакте.
+"""Публикация одобренных русских постов в Telegram, ВКонтакте и журнал сайта.
 
     python3 publish.py                 # крон: берёт approved, публикует, молчит, если нечего
     python3 publish.py --draft 7       # только этот черновик (кнопка «Опубликовать сейчас»)
@@ -9,8 +9,11 @@
   manual (по умолчанию) - публикуются только status=approved (одобрил человек);
   auto                  - ещё и status=review (прошли судей качества без человека).
 
-Каналы: telegram_chat_id и vk_group_id из pipe_settings.publish (пустое =
-канал выключен). Токены из .env: COSMOS_TG_BOT_TOKEN (свой бот канала, НЕ TELEGRAM_BOT_TOKEN - тот общий, инфраструктурный, для алертов common.py.alert()), VK_USER_ACCESS_TOKEN.
+Каналы: telegram_chat_id, vk_group_id, x_account и site_enabled из
+pipe_settings.publish (пустое или false = канал выключен). Журнал сайта
+(site) заводит запись в journal_posts из русского черновика и строки в
+journal_post_translations из его переводов; повторно тот же черновик записи
+не плодит - он помечен в tags как 'pipeline:<id>'. Токены из .env: COSMOS_TG_BOT_TOKEN (свой бот канала, НЕ TELEGRAM_BOT_TOKEN - тот общий, инфраструктурный, для алертов common.py.alert()), VK_USER_ACCESS_TOKEN.
 
 Транспорт повторяет resonance_publish Резонанса (tg.py, vk.py), но на
 requests. Семантика ошибок сохранена: обрыв до отправки - повтор безопасен;
@@ -26,7 +29,8 @@ publish_journal.py, тот же приём, что для журнала) и п�
 wall.post.
 
 Результат пишется в published_to: {"tg": {"ok": true, "message_id": ..,
-"url": ..}, "vk": {...}}. Если один канал прошёл, а второй нет, черновик
+"url": ..}, "vk": {...}, "site": {"ok": true, "post_id": .., "url": ..}}.
+Если один канал прошёл, а второй нет, черновик
 остаётся approved с частичным published_to, и следующий прогон доотправит
 только недостающий канал.
 """
@@ -45,7 +49,7 @@ import requests
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from common import Run, cursor, dump, env, has_long_dash  # noqa: E402
+from common import Run, cursor, dump, env, fix_long_dash, has_long_dash, slugify  # noqa: E402
 
 STAGE = "publish"
 TG_TEXT_LIMIT = 4096
@@ -281,6 +285,171 @@ def english_version(conn, draft_id: int) -> dict[str, Any] | None:
 
 
 # ---------------------------------------------------------------------------
+# Журнал сайта
+# ---------------------------------------------------------------------------
+# Третий канал. В соцсети уходит текст, а в журнал на cosmosecology.ru -
+# запись: русский оригинал в journal_posts и все переводы, что успели
+# появиться у черновика, в journal_post_translations. Схема журнала описана
+# в db/migrations/003_journal.sql: русский текст - источник истины, у
+# перевода свой адрес, пустой адрес значит «открывается по русскому».
+#
+# Что запись пришла из тракта, видно по метке в tags ('pipeline:<id>
+# черновика') - тем же приёмом, каким publish_journal.py помечает уже
+# отправленное в соцсети ('vk:<id>', 'tg:<id>'). По этой метке ловится и
+# повторная публикация: дубль записи не создаётся.
+
+SITE_URL = "https://cosmosecology.ru"
+SITE_TAG_PREFIX = "pipeline:"
+EXCERPT_LIMIT = 200
+# Адрес перевода имеет смысл только там, где заголовок пишется латиницей.
+# Из китайского и японского транслит даёт пустоту, и такой перевод живёт по
+# русскому адресу - витрина ищет и по нему (lib/db.ts, dbJournalBySlug).
+SLUG_LANGS = ("en", "es", "fr", "de")
+# Хвост «Источник: <url>» (в переводе - на своём языке) в теле записи не
+# нужен: у журнала для этого есть source_links.
+SOURCE_LINE = re.compile(r"^[^\n]{0,60}?(https?://\S+)\s*$")
+JOURNAL_LANGS = ("en", "es", "zh", "fr", "de", "ja")
+
+
+def site_tag(draft_id: int) -> str:
+    return f"{SITE_TAG_PREFIX}{draft_id}"
+
+
+def split_source(body: str) -> tuple[str, list[str]]:
+    """Отрезает от текста завершающие строки со ссылкой на источник."""
+    lines = (body or "").rstrip().split("\n")
+    links: list[str] = []
+    while lines:
+        m = SOURCE_LINE.match(lines[-1].strip())
+        if not m:
+            break
+        links.insert(0, m.group(1).rstrip(".,;)"))
+        lines.pop()
+        while lines and not lines[-1].strip():
+            lines.pop()
+    return "\n".join(lines).strip(), links
+
+
+def make_excerpt(body: str, limit: int = EXCERPT_LIMIT) -> str:
+    """Первый абзац целиком, если он короткий, иначе начало по границе
+    предложения. Многоточие остаётся крайним случаем: обрубок на середине
+    фразы в анонсе ленты читается хуже, чем лишние пара слов."""
+    first = re.sub(r"\s+", " ", (body or "").strip().split("\n\n")[0]).strip()
+    if len(first) <= limit:
+        return first
+    window = first[:limit + 40]
+    ends = list(re.finditer(r"[.!?…](\s|$)", window))
+    if ends:
+        return window[:ends[-1].start() + 1].strip()
+    return window[:limit].rsplit(" ", 1)[0].rstrip(" ,;:-–") + "…"
+
+
+def journal_hash(title: str, excerpt: str, body: str) -> str:
+    """Отпечаток русского оригинала так, как его считает сайт: sha256 от
+    title, excerpt, body через 0x1F (JOURNAL_TRANSLATABLE в lib/translations.ts).
+    Не совпал с текущим - админка покажет «перевод устарел»."""
+    import hashlib  # noqa: WPS433
+    return hashlib.sha256("\x1f".join([title, excerpt, body]).encode("utf-8")).hexdigest()
+
+
+def unique_slug(conn, title: str, lang: str = "ru") -> str:
+    """Свободный адрес: у journal_posts.slug и у пары (lang, slug) переводов
+    ограничение на уникальность, повтор заголовка развели бы падением."""
+    base = slugify(title)
+    with conn.cursor() as cur:
+        for n in range(1, 50):
+            candidate = base if n == 1 else f"{base}-{n}"
+            if lang == "ru":
+                cur.execute("SELECT 1 FROM public.journal_posts WHERE slug = %s", (candidate,))
+            else:
+                cur.execute("SELECT 1 FROM public.journal_post_translations WHERE lang = %s AND slug = %s",
+                            (lang, candidate))
+            if not cur.fetchone():
+                return candidate
+    return f"{base}-{int(time.time())}"
+
+
+def translations_of(conn, draft_id: int) -> list[dict[str, Any]]:
+    """Переводы черновика, по одному свежему на язык."""
+    with conn.cursor() as cur:
+        cur.execute(
+            "SELECT DISTINCT ON (lang) lang, title, body FROM pipe_drafts "
+            "WHERE parent_id = %s AND lang <> 'ru' AND lang = ANY(%s) "
+            "ORDER BY lang, id DESC", (draft_id, list(JOURNAL_LANGS)))
+        return [dict(r) for r in cur.fetchall()]
+
+
+def existing_site_post(conn, draft_id: int) -> dict[str, Any] | None:
+    with conn.cursor() as cur:
+        cur.execute("SELECT id, slug FROM public.journal_posts WHERE %s = ANY(tags) LIMIT 1",
+                    (site_tag(draft_id),))
+        row = cur.fetchone()
+    return dict(row) if row else None
+
+
+def site_payload(conn, draft: dict[str, Any], tz_name: str = "Europe/Moscow") -> dict[str, Any]:
+    """Что именно ляжет в журнал. Ничего не пишет: тем же вызовом
+    пользуется dry-run."""
+    body, links = split_source(fix_long_dash(draft.get("body") or ""))
+    title = fix_long_dash((draft.get("title") or "").strip()) or make_excerpt(body, 120)
+    excerpt = make_excerpt(body)
+    when = draft.get("published_at") or _now_local(tz_name)
+    translations = []
+    for t in translations_of(conn, draft["id"]):
+        t_body, _ = split_source(fix_long_dash(t.get("body") or ""))
+        t_title = fix_long_dash((t.get("title") or "").strip()) or make_excerpt(t_body, 120)
+        t_slug = ""
+        # Заголовок без латинских букв даёт адрес вроде «11-60»: такой
+        # перевод лучше оставить на русском адресе.
+        if t["lang"] in SLUG_LANGS and re.search(r"[a-z]{3}", slugify(t_title)):
+            t_slug = unique_slug(conn, t_title, t["lang"])
+        translations.append({"lang": t["lang"], "title": t_title, "excerpt": make_excerpt(t_body),
+                             "body": t_body, "slug": t_slug})
+    return {
+        "slug": unique_slug(conn, title),
+        "published_at": when.date() if hasattr(when, "date") else when,
+        "title": title,
+        "excerpt": excerpt,
+        "body": body,
+        "cover_url": draft.get("image_url") or "",
+        "source_links": links,
+        "tags": [site_tag(draft["id"])],
+        "translations": translations,
+    }
+
+
+def publish_site(conn, draft: dict[str, Any], payload: dict[str, Any]) -> dict[str, Any]:
+    """Заводит запись журнала и переводы к ней. Пишет в то же соединение,
+    что и главный цикл, и не коммитит: запись и отметка в published_to
+    закрываются одной транзакцией."""
+    t0 = time.time()
+    exists = existing_site_post(conn, draft["id"])
+    if exists:
+        return {"ok": True, "post_id": exists["id"], "url": f"{SITE_URL}/journal/{exists['slug']}",
+                "existing": True, "published_at": datetime.now(timezone.utc).isoformat()}
+    src_hash = journal_hash(payload["title"], payload["excerpt"], payload["body"])
+    with conn.cursor() as cur:
+        cur.execute(
+            "INSERT INTO public.journal_posts (slug, published, published_at, title, excerpt, body, "
+            "cover_url, source_links, tags) VALUES (%s, true, %s, %s, %s, %s, %s, %s, %s) RETURNING id",
+            (payload["slug"], payload["published_at"], payload["title"], payload["excerpt"],
+             payload["body"], payload["cover_url"], payload["source_links"], payload["tags"]))
+        row = cur.fetchone()
+        post_id = row["id"] if isinstance(row, dict) else row[0]
+        for tr in payload["translations"]:
+            cur.execute(
+                "INSERT INTO public.journal_post_translations (post_id, lang, title, excerpt, body, slug, source_hash) "
+                "VALUES (%s, %s, %s, %s, %s, %s, %s) ON CONFLICT (post_id, lang) DO UPDATE SET "
+                "title = EXCLUDED.title, excerpt = EXCLUDED.excerpt, body = EXCLUDED.body, "
+                "slug = EXCLUDED.slug, source_hash = EXCLUDED.source_hash, updated_at = NOW()",
+                (post_id, tr["lang"], tr["title"], tr["excerpt"], tr["body"], tr["slug"], src_hash))
+    return {"ok": True, "post_id": post_id, "url": f"{SITE_URL}/journal/{payload['slug']}",
+            "langs": [t["lang"] for t in payload["translations"]],
+            "duration_ms": int((time.time() - t0) * 1000),
+            "published_at": datetime.now(timezone.utc).isoformat()}
+
+
+# ---------------------------------------------------------------------------
 # Очередь автопубликации
 # ---------------------------------------------------------------------------
 
@@ -361,8 +530,10 @@ def main() -> None:
         from common import db
         conn = run.conn if run.conn is not None else db()
         pub = run.settings["publish"]
+        # Журнал сайта идёт последним: сетевые каналы могут упасть, а он
+        # пишет в ту же транзакцию, что и отметка published_to.
         channels = {k: v for k, v in (("tg", pub.get("telegram_chat_id")), ("vk", pub.get("vk_group_id")),
-                                      ("x", pub.get("x_account"))) if v}
+                                      ("x", pub.get("x_account")), ("site", pub.get("site_enabled"))) if v}
         if not channels:
             run.log("каналы не настроены (pipe_settings.publish), нечего делать")
             return
@@ -395,6 +566,9 @@ def main() -> None:
             run.log("нечего публиковать (режим %s)", pub.get("mode"))
             return
 
+        # Дата записи в журнале - календарная, по часовому поясу проекта.
+        tz_name = ((pub.get("schedule") or {}).get("tz")
+                   or run.settings["schedule"].get("tz") or "Europe/Moscow")
         failures: list[str] = []
         for d in drafts:
             if has_long_dash(d["body"]):
@@ -405,6 +579,19 @@ def main() -> None:
             if run.conn is None:
                 print(f"\n=== DRY-RUN: черновик {d['id']} ушёл бы в {', '.join(channels)} ===")
                 print(text)
+                if "site" in channels:
+                    payload = site_payload(conn, d, tz_name)
+                    exists = existing_site_post(conn, d["id"])
+                    print("\n--- журнал сайта ---")
+                    if exists or published.get("site", {}).get("ok"):
+                        print(f"запись уже есть (post_id={(exists or {}).get('id')}), "
+                              f"дубль не создаётся")
+                    dump({k: v for k, v in payload.items() if k != "translations"})
+                    print(f"переводов: {len(payload['translations'])} "
+                          f"({', '.join(t['lang'] for t in payload['translations']) or 'нет'})")
+                    for t in payload["translations"]:
+                        print(f"  {t['lang']}: slug={t['slug'] or '(русский)'} "
+                              f"«{t['title'][:60]}» / {t['excerpt'][:80]}")
                 continue
             for ch, target in channels.items():
                 if published.get(ch, {}).get("ok"):
@@ -423,6 +610,8 @@ def main() -> None:
                         if m:
                             source = m.group(1)
                         res = publish_x(en["title"], en["body"], source, image_url)
+                    elif ch == "site":
+                        res = publish_site(conn, d, site_payload(conn, d, tz_name))
                     else:
                         res = (publish_telegram(text, str(target), image_url) if ch == "tg"
                               else publish_vk(text, str(target), image_url))

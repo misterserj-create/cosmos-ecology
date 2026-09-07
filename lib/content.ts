@@ -54,7 +54,15 @@ export interface Artwork {
   status: string
   descShort: string
   curatorText: string
+  /** Превью для сетки. */
   imageUrl: string
+  /**
+   * Полный кадр для просмотра работы. До 07.09.2026 на витрину уходило одно
+   * превью в 400 пикселей, и рассмотреть объект, собранный из сотен мелких
+   * деталей, было нельзя ни в сетке, ни в лайтбоксе. Оригиналы всё это время
+   * лежали в хранилище и не использовались.
+   */
+  fullUrl: string
   inCatalog: boolean
   category: string
 }
@@ -78,6 +86,7 @@ function toArtwork(r: Record<string, unknown>, locale: Locale): Artwork {
     descShort: String(r.desc_short || ''),
     curatorText: String(r.curator_text || ''),
     imageUrl: String(r.thumb_url || r.image_url || ''),
+    fullUrl: String(r.image_url || r.thumb_url || ''),
     inCatalog: Boolean(r.in_catalog),
     category: enumLabel(CATEGORY_LABELS, String(r.category || ''), locale),
   }

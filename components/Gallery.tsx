@@ -17,7 +17,12 @@ export default function Gallery({ artworks, dict }: { artworks: Artwork[]; dict:
   // на любом языке кроме русского просто ничего не находило бы.
   const [filterId, setFilterId] = useState<AuthorFilter["id"]>("all")
   const [selected, setSelected] = useState<Artwork | null>(null)
+  // Приближение в просмотре работы. Объекты собраны из сотен мелких деталей,
+  // и рассмотреть их вблизи это то единственное, чего не даёт выставочный зал.
+  const [zoomed, setZoomed] = useState(false)
   const gridRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => { setZoomed(false) }, [selected])
 
   const filtered = useMemo(() => {
     const match = AUTHOR_FILTERS.find(f => f.id === filterId)?.match ?? null
@@ -135,18 +140,45 @@ export default function Gallery({ artworks, dict }: { artworks: Artwork[]; dict:
               ) : (
                 <div style={{ width: "100%", height: "100%", background: "#1a1a1a", display: "flex", alignItems: "center", justifyContent: "center", color: "#444", fontSize: "0.8rem" }}>{dict.noPhoto}</div>
               )}
-              <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, padding: "40px 16px 16px", background: "linear-gradient(transparent, rgba(0,0,0,0.85))", opacity: 0, transition: "opacity 0.3s" }}
-                onMouseEnter={e => (e.currentTarget.style.opacity = "1")}
-                onMouseLeave={e => (e.currentTarget.style.opacity = "0")}
-              >
-                <div style={{ fontSize: "0.65rem", color: "#c9a84c", letterSpacing: "0.2em", marginBottom: 4 }}>{art.artId}</div>
-                <div style={{ fontFamily: "var(--font-display)", fontSize: "1rem", fontWeight: 700 }}>{art.title}</div>
+              {/*
+                Подпись видна всегда. Раньше она появлялась по наведению мыши,
+                то есть на телефоне названий работ не было вовсе, а выставка
+                без подписей это склад.
+              */}
+              <div className="art-card-caption" style={{ position: "absolute", bottom: 0, left: 0, right: 0, padding: "48px 16px 14px", background: "linear-gradient(transparent, rgba(0,0,0,0.9))", pointerEvents: "none" }}>
+                <div style={{ fontSize: "0.62rem", color: "#c9a84c", letterSpacing: "0.2em", marginBottom: 4 }}>{art.artId}</div>
+                <div style={{ fontFamily: "var(--font-display)", fontSize: "1rem", fontWeight: 700, lineHeight: 1.2 }}>{art.title}</div>
+                {art.author && (
+                  <div style={{ fontSize: "0.68rem", color: "#9a9a9a", marginTop: 6, letterSpacing: "0.06em" }}>
+                    {art.author}{art.year ? `, ${art.year}` : ""}
+                  </div>
+                )}
               </div>
               <style>{`.art-card:hover .art-card-img { transform: scale(1.05); }`}</style>
             </div>
           ))}
         </div>
       </div>
+
+      {/* Приближение: работа во весь экран, поверх лайтбокса */}
+      {selected && zoomed && (
+        <div
+          onClick={() => setZoomed(false)}
+          style={{ position: "fixed", inset: 0, zIndex: 300, background: "#000", display: "flex", alignItems: "center", justifyContent: "center", cursor: "zoom-out", overflow: "auto" }}
+        >
+          {/* Обычный img, а не next/image: здесь нужен родной размер кадра,
+              который зритель может увеличить жестом или колесом мыши. */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={selected.fullUrl}
+            alt={selected.title}
+            style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain" }}
+          />
+          <div style={{ position: "absolute", left: 0, right: 0, bottom: 18, textAlign: "center", color: "#777", fontSize: "0.68rem", letterSpacing: "0.18em", textTransform: "uppercase", pointerEvents: "none" }}>
+            {selected.artId} · {selected.title}
+          </div>
+        </div>
+      )}
 
       {/* Lightbox */}
       {selected && (
@@ -157,9 +189,12 @@ export default function Gallery({ artworks, dict }: { artworks: Artwork[]; dict:
             className="lightbox-inner fade-up"
             style={{ maxWidth: 900, width: "100%", background: "#0d0d0d", display: "grid", gridTemplateColumns: "1fr 1fr", maxHeight: "90vh", overflow: "auto" }}
           >
-            <div style={{ background: "#111", position: "relative", aspectRatio: "4 / 3", minWidth: 0 }}>
-              {selected.imageUrl && (
-                <Image src={selected.imageUrl} alt={selected.title} fill unoptimized sizes="450px" style={{ objectFit: "contain" }} />
+            <div
+              onClick={() => setZoomed(true)}
+              style={{ background: "#111", position: "relative", aspectRatio: "4 / 3", minWidth: 0, cursor: "zoom-in" }}
+            >
+              {selected.fullUrl && (
+                <Image src={selected.fullUrl} alt={selected.title} fill unoptimized sizes="(max-width: 768px) 100vw, 450px" style={{ objectFit: "contain" }} />
               )}
             </div>
             <div style={{ padding: 32, display: "flex", flexDirection: "column", gap: 12, minWidth: 0 }}>
@@ -169,6 +204,12 @@ export default function Gallery({ artworks, dict }: { artworks: Artwork[]; dict:
               <div className="fade-line" />
               {selected.technique && <div style={{ fontSize: "0.8rem", color: "#888" }}>{selected.technique}{selected.materials ? ` · ${selected.materials}` : ""}</div>}
               {(selected.size || selected.year) && <div style={{ fontSize: "0.8rem", color: "#666" }}>{selected.size}{selected.year ? ` · ${selected.year}` : ""}</div>}
+              <button
+                onClick={() => setZoomed(true)}
+                style={{ alignSelf: "flex-start", padding: 0, border: "none", background: "none", color: "#c9a84c", fontSize: "0.68rem", letterSpacing: "0.16em", textTransform: "uppercase", cursor: "pointer", borderBottom: "1px solid #4a3d18", paddingBottom: 3 }}
+              >
+                {dict.zoomHint}
+              </button>
               {selected.descShort && <div style={{ fontSize: "0.85rem", lineHeight: 1.6, color: "#ccc", marginTop: 8 }}>{selected.descShort}</div>}
               {selected.curatorText && <div style={{ fontSize: "0.78rem", color: "#888", lineHeight: 1.7, marginTop: 8 }}>{selected.curatorText}</div>}
               <div style={{ marginTop: "auto", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12 }}>

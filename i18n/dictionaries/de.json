@@ -31,6 +31,9 @@
     "label": "Orte",
     "now": "Läuft gerade",
     "siteLink": "Museumswebsite →",
+    "past": "Beendet",
+    "soon": "Demnächst",
+    "archiveLabel": "Vergangene Orte",
     "items": {
       "pechatniki": {
         "name": "Galerie Petschatniki",
@@ -64,7 +67,8 @@
     "statsHint": "Tippen Sie auf einer Karte auf (i) – Quelle und Datum. Bei der Masse des Schrotts lässt sich auf die Zahl klicken – ein Vergleich für den Maßstab.",
     "p1": "Der Müll auf der Erde und der Müll im Orbit sind ein und dieselbe Substanz. Eine einzige industrielle Spur, die wir zuerst aus dem Inneren des Planeten gerissen und dann über unsere Köpfe geschleudert haben.",
     "p2": "Der Kosmos hat sich das Beste genommen: Das reine Metall ging in die Hülle der Raketen und in die Elektronik der Satelliten. Unten blieben die Berge aus Schlacke, die wir gewohnt sind zu übersehen. Ich gebe dieser Materie das Recht zurück, Kunst zu sein. Diese Methode heißt Artcycling: verbrannte Platinen, Vakuumröhren und Kippschalter einer großen Epoche werden von den Schichten der Zeit befreit und zu neuen Bedeutungen zusammengesetzt.",
-    "p3": "Die Müllberge im Orbit sind eine Herausforderung für unseren Verstand und unseren Geist. Wir sind bereits vollwertige und verantwortliche Bewohner des Universums. Es ist Zeit, sich entsprechend zu verhalten."
+    "p3": "Die Müllberge im Orbit sind eine Herausforderung für unseren Verstand und unseren Geist. Wir sind bereits vollwertige und verantwortliche Bewohner des Universums. Es ist Zeit, sich entsprechend zu verhalten.",
+    "p2b": "Diese Verwandtschaft ist nicht poetisch gemeint. In der „Wostok 1“ steckten 421 Elektronenröhren, mehr als 600 Transistoren und rund 800 Relais und Schalter; die Sender des ersten künstlichen Erdsatelliten, des Sputnik 1, liefen mit Miniatur-Vakuumröhren. Raumfahrttechnik und Haushaltsgeräte jener Zeit wurden aus derselben Klasse von Bauteilen zusammengesetzt und unterschieden sich durch Auswahl und Abnahme, nicht durch ihre Natur. Wir arbeiten mit ebenjener Materie, die in den Orbit gegangen und dort geblieben ist."
   },
   "stat": {
     "sourceButton": "Datenquelle",
@@ -76,7 +80,7 @@
     "objects": {
       "label": "katalogisierte Objekte im Orbit",
       "asOf": "31. Juli 2026",
-      "trend": "NASA schätzte 2022 rund 25.000"
+      "trend": "2022 zählte die NASA rund 25 000 Objekte größer als 10 cm"
     },
     "fragments": {
       "label": "Fragmente größer als ein Zentimeter (Schätzung)",
@@ -119,7 +123,8 @@
     },
     "noPhoto": "kein Foto",
     "arrowsHint": "← / → zwischen den Werken",
-    "close": "Schließen"
+    "close": "Schließen",
+    "zoomHint": "Zum Vergrößern klicken"
   },
   "team": {
     "label": "Mitwirkende",
@@ -153,6 +158,26 @@
         "name": "Elina Papas",
         "role": "Ausführende Produzentin",
         "desc": "Kuratorin des Art-Clubs Skolkowo, Absolventin der Managementschule Skolkowo und der London Business School. Master der Präsidialakademie RANEPA, Programm „Management im Kunstbetrieb“."
+      }
+    ]
+  },
+  "group": {
+    "label": "Hinter dem Projekt",
+    "name": "Kunstgruppe „Osoznannost“ (Achtsamkeit)",
+    "lead": "„Ökologie des Kosmos“ ist ein Projekt der Kunstgruppe „Osoznannost“. Die Künstler arbeiten mit Materie, die die Technosphäre bereits ausgemustert hat: Platinen, Röhren, Optik, Metall. Geleitet wird die Gruppe von Sergej Koschuchowski.",
+    "factsLabel": "Bestätigt",
+    "facts": [
+      {
+        "title": "Museumsfonds Russlands",
+        "text": "Die Arbeiten von 2023 wurden in die Bestände des Staatlichen Museums für Kosmonautikgeschichte K. E. Ziolkowski aufgenommen und in den Staatlichen Katalog des Museumsfonds der Russischen Föderation eingetragen: Einträge Nr. 43684629, 43060104, 43684628."
+      },
+      {
+        "title": "Kaluga, 2023",
+        "text": "Ausstellung im Staatlichen Museum für Kosmonautikgeschichte K. E. Ziolkowski, 20. Januar bis 26. Februar 2023. Mitveranstalter: das Museum, der Verlag „Russki Mir Media“ und die Staatliche Russische Stroganow-Universität für Design und angewandte Kunst."
+      },
+      {
+        "title": "„Ekovolna“, Nischni Nowgorod",
+        "text": "Juli 2023, Messegelände Nischni Nowgorod: das Kunstobjekt „Der fliehende Mensch“ und ein Meisterkurs für die Besucher des Festivals."
       }
     ]
   },
@@ -268,6 +293,13 @@
         "text": "Für die über Jahre erprobte, verlässliche Partnerschaft und die unverändert starke Unterstützung unserer Initiativen."
       }
     ]
+  },
+  "contact": {
+    "label": "Kontakt",
+    "lead": "Für Ausstellungen, Presse und Anfragen zu den Arbeiten.",
+    "telegram": "Telegram-Kanal",
+    "vk": "VK-Gemeinschaft",
+    "email": "Schreiben Sie uns"
   },
   "footer": {
     "brand": "Ökologie des Kosmos 2026",

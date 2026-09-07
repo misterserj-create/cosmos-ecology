@@ -25,7 +25,14 @@ export type Venue = {
   start: string
   end: string
   streetAddress: string
-  /** Площадка, где выставку можно увидеть прямо сейчас. */
+  /**
+   * Площадка, где выставку можно увидеть прямо сейчас.
+   *
+   * Поле оставлено для ручного переопределения, но обычно не нужно:
+   * состояние считается из дат функцией venueState. Раньше флаг стоял
+   * руками, и после 19 апреля сайт полгода показывал 3 закрывшиеся
+   * выставки как действующие.
+   */
   current?: boolean
   /** Сайт площадки: там расписание и билеты, мы их не дублируем. */
   url?: string
@@ -50,7 +57,6 @@ export const VENUES: Venue[] = [
     start: "2026-03-15",
     end: "2026-12-31",
     streetAddress: "2-я Рыбинская ул., 21, стр. 1",
-    current: true,
     url: "https://sputnikmuseum.ru/",
     note: "Выставка продлена до конца года. Вход по билетам музея, расписание и билеты - на сайте «Спутника».",
   },
@@ -73,6 +79,42 @@ export const VENUES: Venue[] = [
     streetAddress: "Павловская ул., 8",
   },
 ]
+
+/**
+ * Куда написать и где читать проект. Раньше на сайте не было ни одного
+ * способа связи: заинтересованный человек, куратор или журналист упирались
+ * в тупик, а входящие запросы уходили другим.
+ *
+ * Почтовый адрес появится, когда его заведут: пока его нет ни в одном
+ * документе проекта, а выдумывать адрес нельзя.
+ */
+export const CONTACTS: { telegram: string; vk?: string; email?: string } = {
+  telegram: "https://t.me/cosmosecology",
+}
+
+export type VenueState = "past" | "current" | "upcoming"
+
+/**
+ * Идёт ли выставка на площадке. Считается из дат, а не из флага в данных:
+ * иначе календарь надо помнить руками, и сайт стареет молча.
+ * Датой окончания считается весь последний день.
+ */
+export function venueState(v: Venue, now: Date = new Date()): VenueState {
+  const today = now.toISOString().slice(0, 10)
+  if (v.current) return "current"
+  if (today < v.start) return "upcoming"
+  if (today > v.end) return "past"
+  return "current"
+}
+
+/** Сначала то, что идёт, потом будущее, потом прошедшее. */
+export function sortedVenues(now: Date = new Date()): Venue[] {
+  const rank: Record<VenueState, number> = { current: 0, upcoming: 1, past: 2 }
+  return [...VENUES].sort((a, b) => {
+    const d = rank[venueState(a, now)] - rank[venueState(b, now)]
+    return d !== 0 ? d : a.start.localeCompare(b.start)
+  })
+}
 
 /**
  * Цифры "Акта 02: Плотность". Здесь только то, что переводу не подлежит:

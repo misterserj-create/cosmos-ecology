@@ -8,7 +8,7 @@ import CosmicDescent from "@/components/scenes/CosmicDescent"
 import Reveal from "@/components/Reveal"
 import DiveButton from "@/components/DiveButton"
 import StatTile from "@/components/StatTile"
-import { TELEMETRY, VENUES } from "@/lib/site"
+import { CONTACTS, TELEMETRY, sortedVenues, venueState } from "@/lib/site"
 import { intlLocale, isLocale, localePath } from "@/i18n/config"
 import { getDictionary } from "./dictionaries"
 
@@ -65,31 +65,34 @@ export default async function Home({ params }: { params: Promise<{ lang: string 
             <div className="section-label" style={{ marginBottom: 8 }}>{dict.venues.label}</div>
             <div className="fade-line" style={{ marginBottom: 48 }} />
             <Reveal className="grid-venues" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 2 }}>
-              {VENUES.map(v => {
+              {sortedVenues().map(v => {
                 const t = dict.venues.items[v.id]
+                const state = venueState(v)
+                const isPast = state === "past"
+                const isNow = state === "current"
+                const mark = isNow ? dict.venues.now : isPast ? dict.venues.past : dict.venues.soon
                 return (
                   <div
                     key={v.id}
                     className="reveal-item"
                     style={{
-                      background: v.current ? "#111008" : "#0d0d0d",
-                      border: v.current ? "1px solid #4a3d18" : "1px solid #1a1a1a",
+                      background: isNow ? "#111008" : "#0d0d0d",
+                      border: isNow ? "1px solid #4a3d18" : "1px solid #1a1a1a",
                       padding: "48px 40px",
                       transition: "border-color 0.3s",
+                      opacity: isPast ? 0.55 : 1,
                     }}
                   >
-                    {v.current && (
-                      <div style={{ color: "#c9a84c", fontSize: "0.7rem", letterSpacing: "0.28em", textTransform: "uppercase", marginBottom: 14 }}>
-                        {dict.venues.now}
-                      </div>
-                    )}
+                    <div style={{ color: isNow ? "#c9a84c" : "#6d6d6d", fontSize: "0.7rem", letterSpacing: "0.28em", textTransform: "uppercase", marginBottom: 14 }}>
+                      {mark}
+                    </div>
                     <div style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: "1.75rem", marginBottom: 16 }}>{t.name}</div>
-                    <div style={{ color: "#c9a84c", fontSize: "1.15rem", marginBottom: 8 }}>{t.dates}</div>
+                    <div style={{ color: isPast ? "#6d6d6d" : "#c9a84c", fontSize: "1.15rem", marginBottom: 8 }}>{t.dates}</div>
                     <div style={{ color: "#777", fontSize: "1.05rem" }}>{t.address}</div>
-                    {t.note && (
+                    {t.note && !isPast && (
                       <div style={{ color: "#8a8a8a", fontSize: "0.9rem", lineHeight: 1.6, marginTop: 18 }}>{t.note}</div>
                     )}
-                    {v.url && (
+                    {v.url && !isPast && (
                       <a
                         href={v.url}
                         target="_blank"
@@ -149,6 +152,11 @@ export default async function Home({ params }: { params: Promise<{ lang: string 
               </p>
               <p style={{ fontSize: "1.05rem", lineHeight: 1.85, color: "#888", marginBottom: 20 }}>
                 {dict.about.p2}
+              </p>
+              {/* Родство материала с орбитой подтверждается цифрами, а не образом:
+                  абзац добавлен 07.09.2026 по замечанию автора проекта. */}
+              <p style={{ fontSize: "1.05rem", lineHeight: 1.85, color: "#888", marginBottom: 20, borderLeft: "1px solid #2a2418", paddingLeft: 20 }}>
+                {dict.about.p2b}
               </p>
               <p style={{ fontSize: "1.05rem", lineHeight: 1.85, color: "#666" }}>
                 {dict.about.p3}
@@ -292,6 +300,70 @@ export default async function Home({ params }: { params: Promise<{ lang: string 
           </div>
         </section>
       )}
+
+      {/* ── КТО ДЕЛАЕТ ПРОЕКТ ── */}
+      {/* Арт-группа «Осознанность» до 07.09.2026 не была представлена на сайте
+          вовсе, а музейный статус работ лежал внутри чужой благодарности. */}
+      <section id="group" style={{ padding: "80px 24px", borderTop: "1px solid #111" }}>
+        <div style={{ maxWidth: 1200, margin: "0 auto" }}>
+          <div className="section-label" style={{ marginBottom: 8 }}>{dict.group.label}</div>
+          <div className="fade-line" style={{ marginBottom: 48 }} />
+          <div className="grid-about" style={{ display: "grid", gridTemplateColumns: "280px 1fr", gap: 80, alignItems: "start" }}>
+            <div>
+              <div style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: "1.6rem", lineHeight: 1.2, color: "#e6e6e6" }}>
+                {dict.group.name}
+              </div>
+            </div>
+            <div>
+              <p style={{ fontSize: "1.1rem", lineHeight: 1.85, color: "#999", marginBottom: 40 }}>{dict.group.lead}</p>
+              <div style={{ color: "#c9a84c", fontSize: "0.7rem", letterSpacing: "0.28em", textTransform: "uppercase", marginBottom: 20 }}>
+                {dict.group.factsLabel}
+              </div>
+              <Reveal style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 2 }}>
+                {dict.group.facts.map(f => (
+                  <div key={f.title} className="reveal-item" style={{ background: "#0d0d0d", border: "1px solid #1a1a1a", padding: "28px 26px" }}>
+                    <div style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: "1.05rem", marginBottom: 12, color: "#ddd" }}>{f.title}</div>
+                    <div style={{ color: "#8a8a8a", fontSize: "0.92rem", lineHeight: 1.7 }}>{f.text}</div>
+                  </div>
+                ))}
+              </Reveal>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── КОНТАКТЫ ── */}
+      {/* Раздел заведён 07.09.2026: до этого на сайте не было ни одного
+          способа связаться, и любой входящий запрос упирался в тупик. */}
+      <section id="contact" style={{ padding: "80px 24px", borderTop: "1px solid #111" }}>
+        <div style={{ maxWidth: 1200, margin: "0 auto" }}>
+          <div className="section-label" style={{ marginBottom: 8 }}>{dict.contact.label}</div>
+          <div className="fade-line" style={{ marginBottom: 40 }} />
+          <div style={{ display: "flex", gap: 40, flexWrap: "wrap", alignItems: "baseline" }}>
+            <p style={{ color: "#9a9a9a", fontSize: "1.05rem", lineHeight: 1.7, maxWidth: 460, margin: 0 }}>
+              {dict.contact.lead}
+            </p>
+            <div style={{ display: "flex", gap: 28, flexWrap: "wrap" }}>
+              <a href={CONTACTS.telegram} target="_blank" rel="noopener"
+                 style={{ color: "#c9a84c", fontSize: "0.85rem", letterSpacing: "0.18em", textTransform: "uppercase", textDecoration: "none", borderBottom: "1px solid #4a3d18", paddingBottom: 6 }}>
+                {dict.contact.telegram} →
+              </a>
+              {CONTACTS.vk && (
+                <a href={CONTACTS.vk} target="_blank" rel="noopener"
+                   style={{ color: "#c9a84c", fontSize: "0.85rem", letterSpacing: "0.18em", textTransform: "uppercase", textDecoration: "none", borderBottom: "1px solid #4a3d18", paddingBottom: 6 }}>
+                  {dict.contact.vk} →
+                </a>
+              )}
+              {CONTACTS.email && (
+                <a href={`mailto:${CONTACTS.email}`}
+                   style={{ color: "#c9a84c", fontSize: "0.85rem", letterSpacing: "0.18em", textTransform: "uppercase", textDecoration: "none", borderBottom: "1px solid #4a3d18", paddingBottom: 6 }}>
+                  {CONTACTS.email}
+                </a>
+              )}
+            </div>
+          </div>
+        </div>
+      </section>
 
       <SiteFooter dict={dict.footer} />
 

@@ -76,7 +76,7 @@ DEFAULTS: dict[str, Any] = {
         "native_eu": "openai/gpt-5.6-sol",
     },
     "publish": {"mode": "manual", "telegram_chat_id": "", "vk_group_id": "",
-                "languages_to_site": False},
+                "site_enabled": False, "languages_to_site": False},
     "schedule": {"run_all": "0 7 * * *", "publish": "*/30 * * * *", "tz": "Europe/Moscow"},
     "limits": {"search_results_per_topic": 8, "max_findings_per_run": 40,
                "max_posts_per_run": 5, "max_age_days": 14, "rewrite_rounds": 1},
@@ -472,6 +472,35 @@ def fix_long_dash(text: str) -> str:
     """Длинное тире заменяется на среднее. Применяется как последняя
     страховка после модели, а не вместо запрета в промпте."""
     return (text or "").replace(LONG_DASH, "–")
+
+
+TRANSLIT = {
+    "а": "a", "б": "b", "в": "v", "г": "g", "д": "d", "е": "e", "ё": "e", "ж": "zh",
+    "з": "z", "и": "i", "й": "y", "к": "k", "л": "l", "м": "m", "н": "n", "о": "o",
+    "п": "p", "р": "r", "с": "s", "т": "t", "у": "u", "ф": "f", "х": "h", "ц": "ts",
+    "ч": "ch", "ш": "sh", "щ": "sch", "ъ": "", "ы": "y", "ь": "", "э": "e", "ю": "yu",
+    "я": "ya",
+}
+
+
+def slugify(title: str, limit: int = 60) -> str:
+    """Адрес записи журнала из заголовка. Таблица и правила те же, что в
+    db/seed/journal_from_tg.py, которым журнал наполняли из Telegram: адреса
+    старых и новых записей должны выглядеть одинаково.
+
+    Добавлено против исходного варианта одно: у латинских букв со знаками
+    знак снимается (años -> anos, français -> francais). Кириллица через
+    таблицу таких букв не даёт, поэтому русские адреса остались прежними, а
+    заголовки переводов перестали превращаться в «60-a-os»."""
+    import unicodedata  # noqa: WPS433
+    s = (title or "").lower().replace("ß", "ss")
+    s = "".join(TRANSLIT.get(ch, ch) for ch in s)
+    s = "".join(ch for ch in unicodedata.normalize("NFD", s)
+                if not unicodedata.combining(ch))
+    s = re.sub(r"[^a-z0-9]+", "-", s).strip("-")
+    if len(s) > limit:
+        s = s[:limit].rsplit("-", 1)[0]
+    return s or "post"
 
 
 def word_count(text: str) -> int:

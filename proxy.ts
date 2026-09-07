@@ -19,17 +19,37 @@ function hash(s: string) {
  *      главная никуда не переезжает. Явный /ru убирается переадресацией,
  *      чтобы одна и та же страница не жила по двум адресам.
  */
+/**
+ * Совпадает ли печенье с паролем из окружения.
+ *
+ * Запасного пароля нет намеренно: если ADMIN_PASSWORD не задан, вход не
+ * пускает никого. Раньше здесь стояло значение по умолчанию, и на боевом
+ * сервере оно же и работало, то есть админка была открыта всем, кто читал
+ * исходники публичного репозитория.
+ */
+function passes(req: NextRequest): boolean {
+  const secret = process.env.ADMIN_PASSWORD
+  if (!secret) return false
+  return req.cookies.get('admin_token')?.value === hash(secret)
+}
+
 export function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl
 
   // 1. Админка
   if (pathname === '/admin' || pathname.startsWith('/admin/')) {
     if (pathname === '/admin/login') return NextResponse.next()
+    if (!passes(req)) return NextResponse.redirect(new URL('/admin/login', req.url))
+    return NextResponse.next()
+  }
 
-    const token = req.cookies.get('admin_token')?.value
-    const expected = hash(process.env.ADMIN_PASSWORD || 'cosmos2026')
-    if (token !== expected) {
-      return NextResponse.redirect(new URL('/admin/login', req.url))
+  // 1а. Административное API. Проверка входа стоит здесь, а не в каждом
+  //     маршруте: маршрутов 20, обёртку в своё время получили только 9, и
+  //     остальные вместе с их PUT и DELETE были открыты наружу.
+  if (pathname.startsWith('/api/admin')) {
+    if (pathname === '/api/admin/login') return NextResponse.next()
+    if (!passes(req)) {
+      return NextResponse.json({ error: 'нет доступа' }, { status: 401 })
     }
     return NextResponse.next()
   }

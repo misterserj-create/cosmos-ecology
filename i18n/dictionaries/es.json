@@ -31,6 +31,9 @@
     "label": "Sedes",
     "now": "En curso",
     "siteLink": "Web del museo →",
+    "past": "Finalizada",
+    "soon": "Próximamente",
+    "archiveLabel": "Sedes anteriores",
     "items": {
       "pechatniki": {
         "name": "Galería Pechatniki",
@@ -64,7 +67,8 @@
     "statsHint": "Pulse la (i) de una tarjeta para ver la fuente y la fecha. En la masa de basura puede pulsar la cifra: aparece una comparación que da idea de la escala.",
     "p1": "La basura en la tierra y la basura en órbita son una misma sustancia. Una única huella industrial que primero arrancamos de las entrañas del planeta y después lanzamos por encima de nuestras cabezas.",
     "p2": "El cosmos se quedó con lo mejor: el metal limpio fue a parar al revestimiento de los cohetes y a la electrónica de los satélites. Abajo quedaron montañas de escoria que nos acostumbramos a ignorar. Yo le devuelvo a esa materia el derecho a ser arte. Este método se llama artcycling: placas quemadas, válvulas de vacío e interruptores de una gran época se limpian de las capas del tiempo y se recomponen en nuevos significados.",
-    "p3": "Las montañas de basura en órbita son un desafío a nuestro intelecto y a nuestro espíritu. Ya somos habitantes de pleno derecho y responsables del Universo. Es hora de comportarnos como tales."
+    "p3": "Las montañas de basura en órbita son un desafío a nuestro intelecto y a nuestro espíritu. Ya somos habitantes de pleno derecho y responsables del Universo. Es hora de comportarnos como tales.",
+    "p2b": "Este parentesco no es poético. La nave «Vostok 1» llevaba 421 válvulas electrónicas, más de 600 transistores y unos 800 relés e interruptores; los transmisores del primer satélite artificial, el Sputnik 1, funcionaban con válvulas de vacío en miniatura. La técnica espacial y la doméstica de aquella época se montaban con una misma clase de componentes y se diferenciaban por la selección y el control de recepción, no por su naturaleza. Trabajamos con la misma materia que se marchó a la órbita y allí se quedó."
   },
   "stat": {
     "sourceButton": "Fuente de los datos",
@@ -76,7 +80,7 @@
     "objects": {
       "label": "objetos catalogados en órbita",
       "asOf": "31 de julio de 2026",
-      "trend": "la NASA estimaba unos 25 000 en 2022"
+      "trend": "En 2022 la NASA contaba unos 25 000 objetos de más de 10 cm"
     },
     "fragments": {
       "label": "fragmentos de más de un centímetro (estimación)",
@@ -119,7 +123,8 @@
     },
     "noPhoto": "sin foto",
     "arrowsHint": "← / → entre obras",
-    "close": "Cerrar"
+    "close": "Cerrar",
+    "zoomHint": "Haga clic para ampliar"
   },
   "team": {
     "label": "Participantes",
@@ -153,6 +158,26 @@
         "name": "Elina Papas",
         "role": "Productora ejecutiva",
         "desc": "Comisaria del Club de Arte Skólkovo, egresada de la Escuela de Negocios de Skólkovo y de la London Business School. Máster por la RANEPA, programa «Gestión en el negocio del arte»."
+      }
+    ]
+  },
+  "group": {
+    "label": "Quién está detrás del proyecto",
+    "name": "Grupo artístico Osoznannost (Conciencia)",
+    "lead": "«Ecología del Cosmos» es un proyecto del grupo artístico Osoznannost. Los artistas trabajan con la materia que la tecnosfera ya ha dado de baja: placas, válvulas, óptica, metal. El líder del grupo es Sergey Kozhukhovsky.",
+    "factsLabel": "Verificado",
+    "facts": [
+      {
+        "title": "Fondo Museístico de Rusia",
+        "text": "Las obras de 2023 se incorporaron a los fondos del Museo Estatal de Historia de la Cosmonáutica K. E. Tsiolkovski y quedaron inscritas en el Catálogo Estatal del Fondo Museístico de la Federación de Rusia: registros n.º 43684629, 43060104, 43684628."
+      },
+      {
+        "title": "Kaluga, 2023",
+        "text": "Exposición en el Museo Estatal de Historia de la Cosmonáutica K. E. Tsiolkovski, del 20 de enero al 26 de febrero de 2023. Coorganizadores: el museo, la editorial «Russkiy Mir Media» y la Universidad Estatal Rusa de Diseño y Artes Aplicadas Stróganov."
+      },
+      {
+        "title": "«Ekovolna», Nizhni Nóvgorod",
+        "text": "Julio de 2023, Feria de Nizhni Nóvgorod: el objeto artístico «El hombre que huye» y una clase magistral para los visitantes del festival."
       }
     ]
   },
@@ -268,6 +293,13 @@
         "text": "Por una colaboración fiable, probada con los años, y por el apoyo constante a nuestras iniciativas."
       }
     ]
+  },
+  "contact": {
+    "label": "Contacto",
+    "lead": "Para exposiciones, prensa y consultas sobre las obras.",
+    "telegram": "Canal de Telegram",
+    "vk": "Comunidad en VK",
+    "email": "Escríbenos"
   },
   "footer": {
     "brand": "Ecología del Cosmos 2026",

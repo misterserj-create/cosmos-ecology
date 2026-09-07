@@ -31,6 +31,9 @@
     "label": "Venues",
     "now": "On now",
     "siteLink": "Museum website →",
+    "past": "Closed",
+    "soon": "Upcoming",
+    "archiveLabel": "Past venues",
     "items": {
       "pechatniki": {
         "name": "Pechatniki Gallery",
@@ -64,7 +67,8 @@
     "statsHint": "Press (i) on a card for the source and the date. On the debris mass you can click the number for a comparison that gives a sense of scale.",
     "p1": "Waste on the ground and waste in orbit are one and the same substance. A single industrial trace, which we first tore out of the planet's depths and then flung above our own heads.",
     "p2": "Space took the best for itself: clean metal went into rocket skins and satellite electronics. Down below there remained mountains of slag that we have learned to ignore. I am giving this matter back its right to be art. The method is called artcycling: burnt-out circuit boards, vacuum tubes and toggle switches of a great era are cleared of the layers of time and reassembled into new meanings.",
-    "p3": "The mountains of debris in orbit are a challenge to our intellect and our spirit. We are already full and responsible residents of the Universe. It is time to behave accordingly."
+    "p3": "The mountains of debris in orbit are a challenge to our intellect and our spirit. We are already full and responsible residents of the Universe. It is time to behave accordingly.",
+    "p2b": "This kinship is not a poetic figure. Vostok 1 carried 421 vacuum tubes, more than 600 transistors and about 800 relays and switches; the transmitters of the first artificial satellite, Sputnik 1, ran on miniature vacuum tubes. Space hardware and household appliances of that era were assembled from the same class of components and differed in selection and acceptance testing, not in nature. We work with the very matter that went into orbit and stayed there."
   },
   "stat": {
     "sourceButton": "Data source",
@@ -76,7 +80,7 @@
     "objects": {
       "label": "catalogued objects in orbit",
       "asOf": "31 July 2026",
-      "trend": "NASA estimated about 25,000 in 2022"
+      "trend": "NASA counted about 25,000 objects larger than 10 cm in 2022"
     },
     "fragments": {
       "label": "fragments larger than a centimetre (estimate)",
@@ -119,7 +123,8 @@
     },
     "noPhoto": "no photo",
     "arrowsHint": "← / → between works",
-    "close": "Close"
+    "close": "Close",
+    "zoomHint": "Click to look closer"
   },
   "team": {
     "label": "Participants",
@@ -153,6 +158,26 @@
         "name": "Elina Papas",
         "role": "Executive producer",
         "desc": "Curator of the Skolkovo Art Club, graduate of the Skolkovo School of Management and the London Business School. Master's degree from RANEPA, programme “Management in the Art Business”."
+      }
+    ]
+  },
+  "group": {
+    "label": "Behind the project",
+    "name": "Osoznannost (Awareness) art group",
+    "lead": "“Space Ecology” is a project of the Osoznannost art group. The artists work with matter that the technosphere has already written off: circuit boards, tubes, optics, metal. The group is led by Sergey Kozhukhovsky.",
+    "factsLabel": "Verified",
+    "facts": [
+      {
+        "title": "Museum Fund of Russia",
+        "text": "Works from 2023 were taken into the collection of the Tsiolkovsky State Museum of the History of Cosmonautics and entered in the State Catalogue of the Museum Fund of the Russian Federation: records No. 43684629, 43060104, 43684628."
+      },
+      {
+        "title": "Kaluga, 2023",
+        "text": "An exhibition at the Tsiolkovsky State Museum of the History of Cosmonautics, 20 January – 26 February 2023. Co-organisers: the museum, the Russkiy Mir Media publishing house and the Stroganov Russian State University of Design and Applied Arts."
+      },
+      {
+        "title": "Ekovolna, Nizhny Novgorod",
+        "text": "July 2023, the Nizhny Novgorod Fair: the art object “The Fleeing Man” and a masterclass for visitors to the festival."
       }
     ]
   },
@@ -268,6 +293,13 @@
         "text": "For a reliable partnership tested by years and for unfailing support of our initiatives."
       }
     ]
+  },
+  "contact": {
+    "label": "Contact",
+    "lead": "For exhibitions, press and enquiries about the works.",
+    "telegram": "Telegram channel",
+    "vk": "VK community",
+    "email": "Write to us"
   },
   "footer": {
     "brand": "Space Ecology 2026",

@@ -34,9 +34,11 @@ async function q<T = Record<string, unknown>>(sql: string, params: unknown[] = [
  * /api пропускает как есть, поэтому здесь сверяем ту же куку сами.
  */
 export function isAdmin(req: NextRequest): boolean {
-  const token = req.cookies.get('admin_token')?.value
-  const expected = createHash('sha256').update(process.env.ADMIN_PASSWORD || 'cosmos2026').digest('hex')
-  return token === expected
+  // Запасного пароля нет: без ADMIN_PASSWORD в окружении доступа нет ни у кого.
+  const secret = process.env.ADMIN_PASSWORD
+  if (!secret) return false
+  const expected = createHash('sha256').update(secret).digest('hex')
+  return req.cookies.get('admin_token')?.value === expected
 }
 
 // ── Обзор ────────────────────────────────────────────────────────────────

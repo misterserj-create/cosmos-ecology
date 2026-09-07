@@ -1,4 +1,5 @@
 import type { Dictionary } from "@/app/(site)/[lang]/dictionaries"
+import { CONTACTS } from "@/lib/site"
 
 /**
  * Подвал сайта. Вынесен из главной, когда появились страницы журнала:
@@ -20,6 +21,9 @@ export default function SiteFooter({ dict }: { dict: Dictionary["footer"] }) {
               cosmosecology.ru
             </a>
           </span>
+          <a href={CONTACTS.telegram} target="_blank" rel="noopener" style={{ color: "#8a8a8a", fontSize: "0.75rem", textDecoration: "none" }}>
+            Telegram
+          </a>
           <a href="https://notevibe.ru" target="_blank" rel="noopener" style={{ color: "#333", fontSize: "0.75rem", textDecoration: "none" }}>
             {dict.credit}
           </a>
