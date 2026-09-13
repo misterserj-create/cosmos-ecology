@@ -57,6 +57,29 @@ TG_CAPTION_LIMIT = 1024
 VK_API = "https://api.vk.com/method"
 VK_VERSION = "5.131"
 
+# Пауза после отказа ВКонтакте. Недоотправленный черновик остаётся одобренным,
+# и прогон раз в 30 минут слал его в vk заново без предела: с 09.09.2026
+# черновик 20 давал 52 отказа «Flood control» в сутки. Блокировка висит на
+# всей учётной записи, общей с Резонансом и Первоисточником, и каждая попытка
+# её продлевала. Теперь после отказа vk молчит VK_PAUZA_CHASOV часов, затем
+# одна попытка; остальные каналы черновика не ждут.
+VK_PAUZA_CHASOV = 6
+
+
+def vk_pauza_idet(prev: dict | None, now: datetime) -> bool:
+    """Идёт ли пауза после прошлого отказа отправки в vk."""
+    if not prev or prev.get("ok") or prev.get("needs_check"):
+        # Таймаут без ответа (needs_check) - не отказ: пост мог уйти, и
+        # такой случай разбирает человек, а не пауза.
+        return False
+    try:
+        t = datetime.fromisoformat(str(prev.get("at")))
+    except (TypeError, ValueError):
+        return False
+    if t.tzinfo is None:
+        t = t.replace(tzinfo=timezone.utc)
+    return (now - t).total_seconds() < VK_PAUZA_CHASOV * 3600
+
 
 class SendTimeout(RuntimeError):
     """Запрос ушёл и оборвался: сообщение могло быть принято, повтор = дубль."""
@@ -595,6 +618,10 @@ def main() -> None:
                 continue
             for ch, target in channels.items():
                 if published.get(ch, {}).get("ok"):
+                    continue
+                if ch == "vk" and vk_pauza_idet(published.get("vk"), datetime.now(timezone.utc)):
+                    run.log("черновик %s -> vk: пауза после отказа (%s в %s), запрос не отправлен",
+                            d["id"], published["vk"].get("error", "")[:80], published["vk"].get("at", "")[:16])
                     continue
                 try:
                     image_url = d.get("image_url")
