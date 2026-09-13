@@ -81,6 +81,18 @@ def vk_pauza_idet(prev: dict | None, now: datetime) -> bool:
     return (now - t).total_seconds() < VK_PAUZA_CHASOV * 3600
 
 
+def sboi_chernovika(published: dict, otlozheno: set[str]) -> dict:
+    """Каналы черновика, которые реально не приняли отправку в этом прогоне.
+
+    Отложенное намеренно (пауза vk после отказа, X без английского перевода)
+    сбоем не считается: запроса не было, и прогон не должен краснеть. До
+    13.09.2026 пауза vk роняла каждый прогон на все 6 часов, и в панели
+    висело «задача сломана», хотя в vk никто ничего не слал.
+    """
+    return {ch: v.get("error") for ch, v in published.items()
+            if not v.get("ok") and ch not in otlozheno}
+
+
 class SendTimeout(RuntimeError):
     """Запрос ушёл и оборвался: сообщение могло быть принято, повтор = дубль."""
 
@@ -599,6 +611,7 @@ def main() -> None:
                 continue
             text = prepare_text(d["body"], run.settings["voice"].get("signature", ""))
             published = dict(d.get("published_to") or {})
+            otlozheno: set[str] = set()
             if run.conn is None:
                 print(f"\n=== DRY-RUN: черновик {d['id']} ушёл бы в {', '.join(channels)} ===")
                 print(text)
@@ -622,6 +635,7 @@ def main() -> None:
                 if ch == "vk" and vk_pauza_idet(published.get("vk"), datetime.now(timezone.utc)):
                     run.log("черновик %s -> vk: пауза после отказа (%s в %s), запрос не отправлен",
                             d["id"], published["vk"].get("error", "")[:80], published["vk"].get("at", "")[:16])
+                    otlozheno.add("vk")
                     continue
                 try:
                     image_url = d.get("image_url")
@@ -631,6 +645,7 @@ def main() -> None:
                             # Перевод появляется после одобрения; без него X
                             # ждёт следующего прогона, остальные каналы не держим.
                             run.log("черновик %s -> x: английского перевода ещё нет, отложено", d["id"])
+                            otlozheno.add("x")
                             continue
                         source = ""
                         m = re.search(r"Источник:\s*(\S+)", d.get("body") or "")
@@ -663,8 +678,11 @@ def main() -> None:
                                 (json.dumps(published, ensure_ascii=False), d["id"]))
             run.conn.commit()
             if not all_ok:
-                failed = {ch: v.get("error") for ch, v in published.items() if not v.get("ok")}
-                failures.append(f"черновик {d['id']}: не ушёл в {failed}")
+                failed = sboi_chernovika(published, otlozheno)
+                if failed:
+                    failures.append(f"черновик {d['id']}: не ушёл в {failed}")
+                else:
+                    run.log("черновик %s: отложен в %s, не сбой", d["id"], ", ".join(sorted(otlozheno)))
         if run.conn is None:
             conn.close()
         if failures:
