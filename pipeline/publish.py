@@ -41,7 +41,7 @@ import json
 import re
 import sys
 import time
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
@@ -67,7 +67,11 @@ VK_PAUZA_CHASOV = 6
 
 
 def vk_pauza_idet(prev: dict | None, now: datetime) -> bool:
-    """Идёт ли пауза после прошлого отказа отправки в vk."""
+    """Идёт ли пауза после прошлого отказа отправки в vk (одного черновика).
+
+    Оставлена как вспомогательная: содержательную проверку теперь делает
+    vk_pauza_do_kogda() по всем черновикам сразу, потому что блокировка
+    vk общая для учётной записи, а не для конкретного черновика."""
     if not prev or prev.get("ok") or prev.get("needs_check"):
         # Таймаут без ответа (needs_check) - не отказ: пост мог уйти, и
         # такой случай разбирает человек, а не пауза.
@@ -79,6 +83,40 @@ def vk_pauza_idet(prev: dict | None, now: datetime) -> bool:
     if t.tzinfo is None:
         t = t.replace(tzinfo=timezone.utc)
     return (now - t).total_seconds() < VK_PAUZA_CHASOV * 3600
+
+
+def _vk_otkaz_v(prev: dict | None) -> datetime | None:
+    """Момент разбираемого отказа vk в записи published_to одного канала,
+    или None - если записи нет, отказа не было, или это needs_check
+    (таймаут без ответа: не отказ, разбирает человек)."""
+    if not prev or prev.get("ok") or prev.get("needs_check"):
+        return None
+    try:
+        t = datetime.fromisoformat(str(prev.get("at")))
+    except (TypeError, ValueError):
+        return None
+    if t.tzinfo is None:
+        t = t.replace(tzinfo=timezone.utc)
+    return t
+
+
+def vk_pauza_do_kogda(drafts: list[dict[str, Any]]) -> datetime | None:
+    """Конец общей паузы vk по всей учётной записи: самый поздний
+    разбираемый отказ среди ВСЕХ переданных черновиков плюс VK_PAUZA_CHASOV.
+    None, если отказов нет ни у одного черновика.
+
+    Блокировка ВКонтакте висит на учётной записи целиком (общей с
+    Резонансом и Первоисточником), а не на одном черновике: считать паузу
+    по истории только текущего черновика (как делал vk_pauza_idet) значит
+    не видеть отказ, случившийся у соседнего черновика в том же окне."""
+    latest: datetime | None = None
+    for d in drafts:
+        t = _vk_otkaz_v((d.get("published_to") or {}).get("vk"))
+        if t is not None and (latest is None or t > latest):
+            latest = t
+    if latest is None:
+        return None
+    return latest + timedelta(hours=VK_PAUZA_CHASOV)
 
 
 def sboi_chernovika(published: dict, otlozheno: set[str]) -> dict:
@@ -496,14 +534,50 @@ def _now_local(tz_name: str) -> datetime:
         return datetime.now(timezone.utc)
 
 
+def _est_partial(d: dict[str, Any]) -> bool:
+    """Черновик уже частично отправлен: хотя бы один канал ok. Свой слот он
+    занял, когда вышел впервые, поэтому дальше досылается вне очереди, пока
+    не наберёт оставшиеся каналы."""
+    return any(v.get("ok") for v in (d.get("published_to") or {}).values())
+
+
+def _zanyat_po_at(drafts: list[dict[str, Any]], now: datetime) -> bool:
+    """Слот занят, если у ЛЮБОГО из полученных черновиков есть канал ok со
+    временем отправки (at) сегодняшним числом по tz расписания. Черновики
+    без at (старые записи, до того как at стали писать при успехе) слот не
+    занимают - иначе с них слот считался бы занятым вечно."""
+    for d in drafts:
+        for v in (d.get("published_to") or {}).values():
+            if not v.get("ok"):
+                continue
+            at = v.get("at")
+            if not at:
+                continue
+            try:
+                t = datetime.fromisoformat(str(at))
+            except (TypeError, ValueError):
+                continue
+            if t.tzinfo is None:
+                t = t.replace(tzinfo=timezone.utc)
+            if t.astimezone(now.tzinfo).date() == now.date():
+                return True
+    return False
+
+
 def pick_for_slot(run: Run, conn, drafts: list[dict[str, Any]], pub: dict[str, Any]) -> list[dict[str, Any]]:
     """Из очереди выбирает, что публиковать в этот прогон.
 
     Слот открыт, если сегодня один из дней schedule.days и текущий час не
     раньше schedule.hour (по schedule.tz). В слот уходит один пост - самый
-    ранний из тех, кто пролежал не меньше hold_hours. Если сегодня уже что-то
-    публиковалось - слот занят. Явно одобренные человеком (approved) идут
-    вне очереди, как и раньше.
+    ранний из тех, кто пролежал не меньше hold_hours и ещё не отправлен ни
+    в один канал. Если сегодня уже что-то опубликовано целиком, или у
+    любого черновика сегодня уже прошёл хотя бы один канал - слот занят.
+    Явно одобренные человеком (approved) идут вне очереди, как и раньше.
+
+    Частично отправленные черновики (застряли на одном канале, например на
+    паузе vk) возвращаются ВСЕГДА, независимо от слота: свой слот они уже
+    заняли при первой отправке, и очередь не должна ждать, пока досыплется
+    последний канал - иначе одно зависшее место в vk держит всех остальных.
     """
     sched = pub.get("schedule") or {}
     days = [int(x) for x in (sched.get("days") or [1, 3, 5])]          # 1=пн ... 7=вс
@@ -514,11 +588,15 @@ def pick_for_slot(run: Run, conn, drafts: list[dict[str, Any]], pub: dict[str, A
 
     approved = [d for d in drafts if d["status"] == "approved"]
     queued = [d for d in drafts if d["status"] == "review"]
+    partial = [d for d in queued if _est_partial(d)]
+    candidates = [d for d in queued if not _est_partial(d)]
+    if partial:
+        run.log("очередь: частичных %s, досылаем %s", len(partial), [d["id"] for d in partial])
 
     if now.isoweekday() not in days or now.hour < hour:
-        run.log("очередь: слот закрыт (%s %02d:%02d, дни %s, час %s), в очереди %s",
-                now.strftime("%a"), now.hour, now.minute, days, hour, len(queued))
-        return approved
+        run.log("очередь: слот закрыт (%s %02d:%02d, дни %s, час %s), кандидатов %s",
+                now.strftime("%a"), now.hour, now.minute, days, hour, len(candidates))
+        return approved + partial
 
     with conn.cursor() as cur:
         cur.execute("""SELECT count(*) AS n FROM pipe_drafts
@@ -526,12 +604,14 @@ def pick_for_slot(run: Run, conn, drafts: list[dict[str, Any]], pub: dict[str, A
                           AND published_at >= (now() AT TIME ZONE %s)::date""", (tz_name,))
         row = cur.fetchone()
         today = (row["n"] if isinstance(row, dict) else row[0]) if row else 0
-    if today:
-        run.log("очередь: сегодня уже опубликовано %s, слот занят; в очереди %s", today, len(queued))
-        return approved
+    zanyat_po_at = _zanyat_po_at(drafts, now)
+    if today or zanyat_po_at:
+        run.log("очередь: слот занят (опубликовано сегодня %s, канал сегодня уже уходил: %s); кандидатов %s",
+                today, zanyat_po_at, len(candidates))
+        return approved + partial
 
     ready = []
-    for d in queued:
+    for d in candidates:
         created = d.get("created_at")
         if created is None:
             ready.append(d); continue
@@ -542,9 +622,9 @@ def pick_for_slot(run: Run, conn, drafts: list[dict[str, Any]], pub: dict[str, A
             ready.append(d)
     ready.sort(key=lambda d: (d.get("created_at") or datetime.min.replace(tzinfo=timezone.utc), d["id"]))
     chosen = ready[:1]
-    run.log("очередь: слот открыт, выдержали %s ч: %s из %s, берём %s",
-            hold_hours, len(ready), len(queued), [d["id"] for d in chosen])
-    return approved + chosen
+    run.log("очередь: слот открыт, выдержали %s ч: %s из %s кандидатов, берём %s",
+            hold_hours, len(ready), len(candidates), [d["id"] for d in chosen])
+    return approved + partial + chosen
 
 
 def prepare_text(body: str, signature: str) -> str:
@@ -594,6 +674,13 @@ def main() -> None:
                             (list(statuses),))
                 drafts = [dict(r) for r in cur.fetchall()]
 
+        # Пауза vk считается по ВСЕМ полученным черновикам (raw_drafts), не
+        # только по тем, что pick_for_slot отберёт в этот прогон: блокировка
+        # общая для учётной записи, и отказ у любого черновика в очереди
+        # должен остановить vk для всех остальных.
+        raw_drafts = drafts
+        vk_pause_do = vk_pauza_do_kogda(raw_drafts)
+
         if auto and not args.draft:
             drafts = pick_for_slot(run, conn, drafts, pub)
         run.items_in = len(drafts)
@@ -632,9 +719,18 @@ def main() -> None:
             for ch, target in channels.items():
                 if published.get(ch, {}).get("ok"):
                     continue
-                if ch == "vk" and vk_pauza_idet(published.get("vk"), datetime.now(timezone.utc)):
-                    run.log("черновик %s -> vk: пауза после отказа (%s в %s), запрос не отправлен",
-                            d["id"], published["vk"].get("error", "")[:80], published["vk"].get("at", "")[:16])
+                if published.get(ch, {}).get("needs_check"):
+                    # Запрос ушёл и оборвался: пост мог выйти. Повтор = дубль,
+                    # поэтому не шлём, а оставляем сбоем, чтобы разобрал человек.
+                    # До 13.09.2026 канал переотправлялся на следующем прогоне,
+                    # вопреки описанию в шапке; с досылкой частичных черновиков
+                    # каждые 30 минут это стало бы частым дублем.
+                    run.log("черновик %s -> %s: прошлый запрос оборвался, ждёт проверки человеком, не шлём",
+                            d["id"], ch)
+                    continue
+                if ch == "vk" and vk_pause_do and datetime.now(timezone.utc) < vk_pause_do:
+                    run.log("черновик %s -> vk: пауза по всей учётной записи до %s, запрос не отправлен",
+                            d["id"], vk_pause_do.isoformat()[:16])
                     otlozheno.add("vk")
                     continue
                 try:
@@ -657,16 +753,26 @@ def main() -> None:
                     else:
                         res = (publish_telegram(text, str(target), image_url) if ch == "tg"
                               else publish_vk(text, str(target), image_url))
-                    published[ch] = res
+                    published[ch] = {**res, "at": datetime.now(timezone.utc).isoformat()}
                     run.log("черновик %s -> %s: %s", d["id"], ch, res.get("url") or res)
                 except SendTimeout as e:
                     published[ch] = {"ok": False, "error": str(e)[:300], "needs_check": True,
                                      "at": datetime.now(timezone.utc).isoformat()}
                     run.log("черновик %s -> %s: %s", d["id"], ch, e)
                 except Exception as e:  # noqa: BLE001
-                    published[ch] = {"ok": False, "error": str(e)[:300],
-                                     "at": datetime.now(timezone.utc).isoformat()}
-                    run.log("черновик %s -> %s: ошибка %s", d["id"], ch, e)
+                    now_utc = datetime.now(timezone.utc)
+                    published[ch] = {"ok": False, "error": str(e)[:300], "at": now_utc.isoformat()}
+                    if ch == "vk":
+                        # Отказ - настоящий, не таймаут: продлеваем общую
+                        # паузу немедленно, чтобы следующие черновики этого
+                        # же прогона не пытались слать в vk следом - после
+                        # конца паузы уходит не больше одной попытки, пока
+                        # она не пройдёт успешно.
+                        vk_pause_do = now_utc + timedelta(hours=VK_PAUZA_CHASOV)
+                        run.log("черновик %s -> vk: отказ (%s), общая пауза продлена до %s",
+                                d["id"], str(e)[:200], vk_pause_do.isoformat()[:16])
+                    else:
+                        run.log("черновик %s -> %s: ошибка %s", d["id"], ch, e)
             all_ok = all(published.get(ch, {}).get("ok") for ch in channels)
             with cursor(run) as cur:
                 if all_ok:
