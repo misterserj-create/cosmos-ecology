@@ -65,6 +65,45 @@ VK_VERSION = "5.131"
 # одна попытка; остальные каналы черновика не ждут.
 VK_PAUZA_CHASOV = 6
 
+# Интервал между удачными отправками в vk (pipe_settings.publish.vk_interval_min
+# его переопределяет). После починки токена в очереди копится десяток
+# черновиков, и без интервала один прогон выстрелил бы ими пачкой - ровно то,
+# что ВКонтакте считает флудом. С интервалом очередь уходит по одному.
+VK_INTERVAL_MIN = 60
+
+
+def vk_vyklyuchen(pub: dict) -> bool:
+    """Выключен ли vk вручную (pipe_settings.publish.vk_off = true).
+
+    Убрать vk_group_id для этого нельзя: без vk в списке каналов черновик,
+    уже вышедший в tg и на сайт, сразу получает status='published', и досылать
+    в vk потом нечего. Выключенный vk откладывается, как пауза, и ждёт."""
+    return pub.get("vk_off") is True
+
+
+def vk_interval_do_kogda(drafts: list[dict[str, Any]], interval_min: int) -> datetime | None:
+    """До какого момента vk ждёт после последней удачной отправки: самая
+    поздняя удачная отправка среди всех черновиков плюс interval_min.
+    None, если удачных нет, интервал 0 или дата не читается."""
+    if not interval_min:
+        return None
+    latest: datetime | None = None
+    for d in drafts:
+        prev = (d.get("published_to") or {}).get("vk")
+        if not prev or not prev.get("ok"):
+            continue
+        try:
+            t = datetime.fromisoformat(str(prev.get("at")))
+        except (TypeError, ValueError):
+            continue
+        if t.tzinfo is None:
+            t = t.replace(tzinfo=timezone.utc)
+        if latest is None or t > latest:
+            latest = t
+    if latest is None:
+        return None
+    return latest + timedelta(minutes=interval_min)
+
 
 def vk_pauza_idet(prev: dict | None, now: datetime) -> bool:
     """Идёт ли пауза после прошлого отказа отправки в vk (одного черновика).
@@ -225,13 +264,22 @@ def publish_telegram(text: str, chat_id: str, image_url: str | None = None) -> d
 def vk_token() -> str:
     """Токен из .env. Если задан RESONANCE_DSN, свежий токен читается из
     vk_tokens Резонанса (его обновляет wf_vk_token_refresh.py каждые 45 мин),
-    а .env остаётся запасным."""
+    а .env остаётся запасным.
+
+    Запись в vk_tokens выбирает VK_TOKEN_SERVICE (по умолчанию 'vk', общий
+    токен учётной записи 67727, которым пользуются ещё Резонанс, Матрёшка и
+    сборщики статистики). С 08.09.2026 этот токен на любой метод отвечает
+    error 9 «Flood control»; отдельный токен космоса заводится через
+    vk_auth_code_flow.py с ?service=vk_cosmos и включается строкой
+    VK_TOKEN_SERVICE=vk_cosmos в .env тракта."""
     dsn = env("RESONANCE_DSN")
+    service = env("VK_TOKEN_SERVICE") or "vk"
     if dsn:
         try:
             import psycopg2
             with psycopg2.connect(dsn, connect_timeout=5) as conn, conn.cursor() as cur:
-                cur.execute("SELECT access_token FROM vk_tokens WHERE service = 'vk' AND expires_at > NOW() LIMIT 1")
+                cur.execute("SELECT access_token FROM vk_tokens WHERE service = %s AND expires_at > NOW() LIMIT 1",
+                            (service,))
                 row = cur.fetchone()
                 if row and row[0]:
                     return row[0]
@@ -680,6 +728,17 @@ def main() -> None:
         # должен остановить vk для всех остальных.
         raw_drafts = drafts
         vk_pause_do = vk_pauza_do_kogda(raw_drafts)
+        # Интервал считается по всей таблице: черновик, дошедший во все
+        # каналы, уходит в published и в raw_drafts уже не попадает.
+        vk_interval = int(pub.get("vk_interval_min", VK_INTERVAL_MIN) or 0)
+        with conn.cursor() as cur:
+            cur.execute("SELECT published_to FROM pipe_drafts WHERE published_to->'vk'->>'ok' = 'true' "
+                        "ORDER BY published_to->'vk'->>'at' DESC LIMIT 5")
+            vk_sent = [dict(r) for r in cur.fetchall()]
+        vk_interval_do = vk_interval_do_kogda(vk_sent, vk_interval)
+        if vk_interval_do and (vk_pause_do is None or vk_interval_do > vk_pause_do):
+            vk_pause_do = vk_interval_do
+        vk_off = vk_vyklyuchen(pub)
 
         if auto and not args.draft:
             drafts = pick_for_slot(run, conn, drafts, pub)
@@ -728,6 +787,11 @@ def main() -> None:
                     run.log("черновик %s -> %s: прошлый запрос оборвался, ждёт проверки человеком, не шлём",
                             d["id"], ch)
                     continue
+                if ch == "vk" and vk_off:
+                    run.log("черновик %s -> vk: выключен (pipe_settings.publish.vk_off), запрос не отправлен",
+                            d["id"])
+                    otlozheno.add("vk")
+                    continue
                 if ch == "vk" and vk_pause_do and datetime.now(timezone.utc) < vk_pause_do:
                     run.log("черновик %s -> vk: пауза по всей учётной записи до %s, запрос не отправлен",
                             d["id"], vk_pause_do.isoformat()[:16])
@@ -755,6 +819,9 @@ def main() -> None:
                               else publish_vk(text, str(target), image_url))
                     published[ch] = {**res, "at": datetime.now(timezone.utc).isoformat()}
                     run.log("черновик %s -> %s: %s", d["id"], ch, res.get("url") or res)
+                    if ch == "vk" and vk_interval:
+                        # Следующий черновик этого же прогона ждёт интервал.
+                        vk_pause_do = datetime.now(timezone.utc) + timedelta(minutes=vk_interval)
                 except SendTimeout as e:
                     published[ch] = {"ok": False, "error": str(e)[:300], "needs_check": True,
                                      "at": datetime.now(timezone.utc).isoformat()}
