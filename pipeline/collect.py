@@ -161,6 +161,7 @@ def dedupe(items: list[dict[str, Any]], recent: list[dict[str, Any]]) -> list[di
         if dup_of and dup_of != nurl:
             it["verdict"] = "duplicate"
             it["verdict_reason"] = f"дубль {dup_of}"
+            it["duplicate_of"] = dup_of
         elif dup_of == nurl:
             it["verdict"] = "skip"  # уже есть в базе ровно по этому url
         else:
@@ -170,6 +171,33 @@ def dedupe(items: list[dict[str, Any]], recent: list[dict[str, Any]]) -> list[di
                 seen_titles.append((it["title"], nurl))
         out.append(it)
     return out
+
+
+def select_for_save(items: list[dict[str, Any]], limit: int,
+                    known_urls: set[str]) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    """Что из партии записать в базу.
+
+    Лимит новых находок режет партию, поэтому раньше громкая новость, о которой
+    пишут многие издания, могла не попасть в число первых и отбрасывалась, а её
+    дубли записывались со ссылкой на незаписанный оригинал. На следующий день
+    оригинал находился снова и помечался дублем собственного дубля: доклад ESA
+    2026 года так ни разу не дошёл до судьи.
+
+    Теперь новые находки идут по числу дублей (сколько изданий о том же), при
+    равенстве в прежнем порядке, а дубль записывается, только если его оригинал
+    уже в базе или записывается сейчас."""
+    new = [i for i in items if i["verdict"] == "new"]
+    dups = [i for i in items if i["verdict"] == "duplicate"]
+    echo: dict[str, int] = {}
+    for d in dups:
+        target = d.get("duplicate_of")
+        if target:
+            echo[target] = echo.get(target, 0) + 1
+    ranked = sorted(new, key=lambda i: -echo.get(i["url"], 0))
+    fresh = ranked[:max(limit, 0)]
+    saved = set(known_urls) | {i["url"] for i in fresh}
+    kept = [d for d in dups if d.get("duplicate_of") in saved]
+    return fresh, kept
 
 
 def ensure_search_sources(run: Run, topics: list[str]) -> dict[str, int]:
@@ -275,10 +303,11 @@ def main() -> None:
                 recent = [dict(r) for r in cur.fetchall()]
         items = dedupe(items, recent)
         limit = int(cfg["limits"]["max_findings_per_run"])
-        fresh = [i for i in items if i["verdict"] == "new"][:limit]
-        dups = [i for i in items if i["verdict"] == "duplicate"]
+        fresh, dups = select_for_save(items, limit, {r["url"] for r in recent})
         skipped = sum(1 for i in items if i["verdict"] == "skip")
-        run.log("новых %d, дублей %d, уже в базе %d", len(fresh), len(dups), skipped)
+        dropped = sum(1 for i in items if i["verdict"] in ("new", "duplicate")) - len(fresh) - len(dups)
+        run.log("новых %d, дублей %d, уже в базе %d, отложено до следующего сбора %d",
+                len(fresh), len(dups), skipped, dropped)
 
         if run.conn is None:
             print("\n=== DRY-RUN: находки (в базу не записаны) ===")
